@@ -1,0 +1,38 @@
+export const mockChildren = [
+  {
+    id: 'child-1',
+    parentId: 'parent-1',
+    name: 'Liam Johnson',
+    age: 10,
+    grade: '5th Grade',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=liam',
+    learningConcerns: ['Focus Issues', 'Dyslexia'],
+    strengths: ['Creative Thinking', 'Problem Solving'],
+    learningStyle: 'Kinesthetic',
+    interests: ['Space', 'Dinosaurs', 'Building'],
+    schedule: [
+      { day: 'Monday', timeSlots: [{ start: '16:00', end: '17:00' }] },
+      { day: 'Wednesday', timeSlots: [{ start: '16:00', end: '17:00' }] },
+      { day: 'Friday', timeSlots: [{ start: '15:00', end: '16:00' }] },
+    ],
+    profileCompleted: true,
+    teacherId: 'teacher-1',
+  },
+  {
+    id: 'child-2',
+    parentId: 'parent-1',
+    name: 'Ava Johnson',
+    age: 13,
+    grade: '8th Grade',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ava',
+    learningConcerns: ['Anxiety'],
+    strengths: ['Writing', 'Art', 'Leadership'],
+    learningStyle: 'Visual',
+    interests: ['Reading', 'Art', 'Music'],
+    schedule: [
+      { day: 'Tuesday', timeSlots: [{ start: '17:00', end: '18:00' }] },
+      { day: 'Thursday', timeSlots: [{ start: '17:00', end: '18:00' }] },
+    ],
+    profileCompleted: false,
+  },
+]

@@ -1,0 +1,62 @@
+export const mockAssessments = [
+  {
+    id: 'assessment-1',
+    childId: 'child-1',
+    status: 'completed' as const,
+    answers: Array.from({ length: 20 }, (_, i) => ({
+      questionId: i + 1,
+      answer: Math.random() > 0.3 ? 'Yes' : 'Sometimes',
+    })),
+    result: {
+      learningProfile: {
+        type: 'Kinesthetic Learner',
+        description: 'Liam learns best through hands-on activities, movement, and tactile experiences. He excels when he can touch, build, and manipulate objects while learning.',
+      },
+      strengths: ['Problem Solving', 'Creative Thinking', 'Spatial Awareness'],
+      weaknesses: ['Reading Comprehension', 'Focus Duration'],
+      recommendations: [
+        'Use hands-on learning materials like blocks and manipulatives',
+        'Incorporate movement breaks every 20 minutes',
+        'Use visual aids alongside verbal instructions',
+        'Practice math with real-world objects and scenarios',
+      ],
+      recommendedTeachers: ['teacher-1', 'teacher-3', 'teacher-4'],
+      scores: [
+        { category: 'Logical Reasoning', score: 85 },
+        { category: 'Reading Comprehension', score: 55 },
+        { category: 'Visual Processing', score: 78 },
+        { category: 'Auditory Processing', score: 62 },
+        { category: 'Memory Retention', score: 70 },
+        { category: 'Attention Span', score: 45 },
+        { category: 'Creativity', score: 90 },
+        { category: 'Problem Solving', score: 88 },
+      ],
+    },
+    progress: 100,
+    startedAt: '2026-07-20T10:00:00Z',
+    completedAt: '2026-07-20T10:30:00Z',
+  },
+]
+
+export const assessmentQuestions = [
+  { id: 1, question: 'My child enjoys building things with blocks or LEGOs.', category: 'Learning Style', type: 'scale' as const, options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 2, question: 'My child prefers reading books over watching videos.', category: 'Learning Style', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 3, question: 'My child remembers information better when it is set to music or rhythm.', category: 'Auditory', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 4, question: 'My child has difficulty staying focused on one task for more than 15 minutes.', category: 'Attention', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 5, question: 'My child enjoys solving puzzles and brain teasers.', category: 'Logic', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 6, question: 'My child struggles with reading comprehension.', category: 'Reading', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 7, question: 'My child learns best by doing hands-on activities.', category: 'Learning Style', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 8, question: 'My child can easily remember facts and figures.', category: 'Memory', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 9, question: 'My child is comfortable asking questions in class.', category: 'Social', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 10, question: 'My child prefers working alone rather than in groups.', category: 'Social', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 11, question: 'My child shows creativity in drawing, writing, or storytelling.', category: 'Creativity', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 12, question: 'My child has difficulty with math concepts.', category: 'Math', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 13, question: 'My child follows multi-step instructions easily.', category: 'Processing', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 14, question: 'My child gets anxious about tests and exams.', category: 'Emotional', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 15, question: 'My child enjoys learning new things independently.', category: 'Motivation', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 16, question: 'My child has trouble with handwriting or fine motor skills.', category: 'Motor', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 17, question: 'My child can explain concepts they have learned to others.', category: 'Comprehension', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 18, question: 'My child gets frustrated easily when work is challenging.', category: 'Emotional', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 19, question: 'My child prefers visual aids like charts and diagrams.', category: 'Learning Style', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+  { id: 20, question: 'My child shows strong organizational skills.', category: 'Executive', type: 'scale', options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always'] },
+]
