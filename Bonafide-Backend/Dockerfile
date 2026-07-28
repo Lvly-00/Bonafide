@@ -9,13 +9,16 @@ RUN apk add --no-cache \
     gettext \
     bash
 
-RUN docker-php-ext-install pdo pdo_mysql
+RUN apk add --no-cache postgresql-dev \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
 COPY . .
+
+RUN composer install --no-dev --optimize-autoloader
 
 RUN mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions storage/logs \
     && chmod -R 775 storage bootstrap/cache \
