@@ -105,30 +105,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6 rounded-xl border border-dashed border-border bg-gray-50 p-3">
-            <p className="mb-2 text-xs font-semibold text-gray-500">Demo Accounts</p>
-            <div className="space-y-1.5 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Parent</span>
-                <span className="font-mono text-gray-500">sarah@example.com</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Teacher</span>
-                <span className="font-mono text-gray-500">emma@example.com</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Teacher 2</span>
-                <span className="font-mono text-gray-500">james@example.com</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Admin</span>
-                <span className="font-mono text-gray-500">admin@learnlink.com</span>
-              </div>
-              <p className="mt-1 text-[10px] text-gray-400">Any password works</p>
-            </div>
-          </div>
-
-          <p className="mt-4 text-center text-sm text-gray-500">
+          <p className="mt-6 text-center text-sm text-gray-500">
             Don't have an account?{' '}
             <Link to={ROUTES.REGISTER} className="text-primary font-medium hover:underline">
               Create one

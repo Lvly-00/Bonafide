@@ -3,6 +3,11 @@ import { useAuthStore } from '@/stores/authStore'
 import { authService } from '@/services/authService'
 import type { User } from '@/types'
 import { toast } from 'sonner'
+import type { AxiosError } from 'axios'
+
+function getErrorMessage(error: AxiosError<{ message?: string }>): string {
+  return error.response?.data?.message || error.message || 'Something went wrong'
+}
 
 export function useAuth() {
   const { user, token, isAuthenticated, isLoading, setUser, setToken, setLoading, logout: clearAuth } = useAuthStore()
@@ -16,7 +21,7 @@ export function useAuth() {
       toast.success('Welcome back!')
       return result.user
     } catch (error: any) {
-      toast.error(error.message || 'Login failed')
+      toast.error(getErrorMessage(error))
       throw error
     } finally {
       setLoading(false)
@@ -32,7 +37,7 @@ export function useAuth() {
       toast.success('Account created successfully!')
       return result.user
     } catch (error: any) {
-      toast.error(error.message || 'Registration failed')
+      toast.error(getErrorMessage(error))
       throw error
     } finally {
       setLoading(false)
