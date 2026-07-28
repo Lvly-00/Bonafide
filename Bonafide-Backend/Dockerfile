@@ -4,9 +4,6 @@ RUN apk add --no-cache \
     curl \
     git \
     unzip \
-    nginx \
-    supervisor \
-    gettext \
     bash
 
 RUN apk add --no-cache postgresql-dev \
@@ -21,15 +18,11 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader
 
 RUN mkdir -p storage/framework/views storage/framework/cache storage/framework/sessions storage/logs \
-    && chmod -R 775 storage bootstrap/cache \
-    && chown -R www-data:www-data storage bootstrap/cache
+    && chmod -R 775 storage bootstrap/cache
 
-COPY docker/nginx.conf /etc/nginx/http.d/default.conf
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-COPY docker/start.sh /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
+EXPOSE ${PORT:-8000}
 
-EXPOSE 80
-
-CMD ["/usr/local/bin/start.sh"]
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
