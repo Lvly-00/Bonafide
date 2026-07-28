@@ -211,7 +211,7 @@ export default function SettingsPage() {
             <div className="flex flex-col items-center gap-4 sm:flex-row">
               <div className="relative">
                 <Avatar className="h-20 w-20">
-                  <AvatarImage src={profile.avatar || null} />
+                  <AvatarImage src={profile.avatar || undefined} />
                   <AvatarFallback className="text-lg">
                     {profile.name.split(' ').map((n) => n[0]).join('')}
                   </AvatarFallback>

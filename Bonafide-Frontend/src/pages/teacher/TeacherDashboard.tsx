@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ComponentType } from 'react'
 import { motion } from 'framer-motion'
 import {
   Users,
@@ -76,7 +76,7 @@ export default function TeacherDashboard() {
 
   const { stats, todaySessions, recentStudents, upcomingWeek } = data
 
-  const statCards = [
+  const statCards: { label: string; value: number; icon: ComponentType<{ className?: string }>; color: string; suffix?: string }[] = [
     { label: 'Total Students', value: stats.totalStudents, icon: Users, color: 'text-blue-600 bg-blue-100' },
     { label: 'Total Sessions', value: stats.totalSessions, icon: CalendarCheck, color: 'text-purple-600 bg-purple-100' },
     { label: 'Completed This Month', value: stats.completedThisMonth, icon: CheckCircle2, color: 'text-green-600 bg-green-100' },

@@ -372,7 +372,7 @@ export default function BookingPage() {
                     const dateStr = `${viewingYear}-${String(viewingMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                     const dayName = dayNameFromDate(day)
                     const teacherSlots = getDayAvailability(teacher!, dayName)
-                    const childSlots = getDayChildSchedule(selectedChild, dayName)
+                    const childSlots = getDayChildSchedule(selectedChild ?? null, dayName)
                     const teacherHasAny = teacher!.availability && teacher!.availability.length > 0
                     const childHasAny = selectedChild?.schedule && selectedChild.schedule.length > 0
                     const teacherOk = !teacherHasAny || teacherSlots.length > 0
@@ -426,7 +426,7 @@ export default function BookingPage() {
                       const teacherHasAny = teacher!.availability && teacher!.availability.length > 0
                       const childHasAny = selectedChild?.schedule && selectedChild.schedule.length > 0
                       const teacherDaySlots = teacherHasAny ? generateTimeSlots(getDayAvailability(teacher!, dayName)) : []
-                      const childDaySlots = childHasAny ? generateTimeSlots(getDayChildSchedule(selectedChild, dayName)) : []
+                      const childDaySlots = childHasAny ? generateTimeSlots(getDayChildSchedule(selectedChild ?? null, dayName)) : []
                       // If neither has schedule, show all; if one has, use it; if both have, intersect
                       let slots: string[]
                       if (!teacherHasAny && !childHasAny) {

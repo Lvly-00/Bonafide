@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ComponentType } from 'react'
 import { motion } from 'framer-motion'
 import {
   CalendarCheck,
@@ -95,7 +95,7 @@ export default function ParentDashboard() {
 
   const { stats, upcomingSessions, recentActivity, childrenProgress } = data
 
-  const statCards = [
+  const statCards: { label: string; value: number; icon: ComponentType<{ className?: string }>; color: string; suffix?: string }[] = [
     { label: 'Total Sessions', value: stats.totalSessions, icon: CalendarCheck, color: 'text-blue-600 bg-blue-100' },
     { label: 'Completed', value: stats.completedSessions, icon: CheckCircle2, color: 'text-green-600 bg-green-100' },
     { label: 'Upcoming', value: stats.upcomingSessions, icon: CalendarClock, color: 'text-purple-600 bg-purple-100' },

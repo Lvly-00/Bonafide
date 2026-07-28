@@ -171,7 +171,7 @@ export default function MatchingPage() {
             Filters
             {hasActiveFilters && (
               <span className="ml-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold">
-                {(selectedSubjects.length + (priceMin ? 1 : 0) + (priceMax ? 1 : 0) + (ratingFilter > 0 ? 1 : 0) + (locationFilter ? 1 : 0))}
+                {(selectedSubjects.length + (ratingFilter > 0 ? 1 : 0) + (locationFilter ? 1 : 0))}
               </span>
             )}
           </Button>

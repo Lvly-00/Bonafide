@@ -1,0 +1,60 @@
+services:
+  # --- Backend: Laravel API (Docker) ---
+  - type: web
+    name: bonafide-backend
+    runtime: docker
+    repo: https://github.com/YOUR_USERNAME/YOUR_REPO
+    branch: main
+    rootDir: Bonafide-Backend
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_URL
+        value: https://bonafide-backend.onrender.com
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        value: db.ldsywoalzsjxjszejvtw.supabase.co
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_DATABASE
+        value: postgres
+      - key: DB_USERNAME
+        value: postgres
+      - key: DB_PASSWORD
+        value: "cSmT2wr8gf@NHyUcCcW$"
+      - key: DB_SSLMODE
+        value: require
+      - key: SESSION_DRIVER
+        value: cookie
+      - key: CACHE_STORE
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: LOG_LEVEL
+        value: warning
+
+  # --- Frontend: React + Vite (Static Site) ---
+  - type: web
+    name: bonafide-frontend
+    runtime: static
+    repo: https://github.com/YOUR_USERNAME/YOUR_REPO
+    branch: main
+    rootDir: Bonafide-Frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://bonafide-backend.onrender.com/api
+
+  # --- PostgreSQL Database (optional) ---
+  - type: pserv
+    name: bonafide-db
+    plan: free
+    runtime: postgres
+    version: "16"

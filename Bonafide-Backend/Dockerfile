@@ -5,7 +5,9 @@ RUN apk add --no-cache \
     git \
     unzip \
     nginx \
-    supervisor
+    supervisor \
+    gettext \
+    bash
 
 RUN docker-php-ext-install pdo pdo_mysql
 
@@ -22,6 +24,9 @@ RUN mkdir -p storage/framework/views storage/framework/cache storage/framework/s
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
+COPY docker/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
 EXPOSE 80
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/usr/local/bin/start.sh"]
