@@ -52,7 +52,7 @@ function getDayAvailability(teacher: Teacher, dayName: string) {
   if (slots.length === 0) return []
   if (typeof slots[0] === 'string') {
     const result: { start: string; end: string }[] = []
-    for (const t of slots as string[]) {
+    for (const t of slots as unknown as string[]) {
       const [h] = t.split(':').map(Number)
       const next = `${String(h + 1).padStart(2, '0')}:00`
       result.push({ start: t, end: next })
