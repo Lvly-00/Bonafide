@@ -83,7 +83,6 @@ export default function AssessmentSurveyModal({ bookingId, role, onClose }: Asse
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-
   const groups = role === 'parent' ? parentGroups : teacherGroups
   const allQuestions = groups.flatMap((g) => g.questions)
   const answeredCount = allQuestions.filter((q) => answers[q.id] !== undefined).length
@@ -170,16 +169,18 @@ export default function AssessmentSurveyModal({ bookingId, role, onClose }: Asse
       </div>
 
       <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           {[1, 2, 3, 4, 5].map((val) => (
             <span key={val} className="text-[10px] text-gray-400">
               {val}={scaleLabels[val].split(' ').pop()}
             </span>
           ))}
         </div>
-        <Button onClick={handleSubmit} disabled={answeredCount < totalCount || submitting}>
-          {submitting ? 'Saving...' : 'Submit'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleSubmit} disabled={answeredCount < totalCount || submitting}>
+            {submitting ? 'Saving...' : 'Submit'}
+          </Button>
+        </div>
       </div>
     </DialogContent>
   )

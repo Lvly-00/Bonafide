@@ -28,6 +28,37 @@ class NotificationController extends Controller
         return response()->json($notifications);
     }
 
+    public function store(Request $request): JsonResponse
+    {
+        $request->validate([
+            'userId' => 'required|exists:users,id',
+            'title' => 'required|string|max:255',
+            'message' => 'required|string',
+            'type' => 'required|string',
+            'link' => 'nullable|string',
+        ]);
+
+        $notification = Notification::create([
+            'user_id' => $request->userId,
+            'title' => $request->title,
+            'message' => $request->message,
+            'type' => $request->type,
+            'read' => false,
+            'link' => $request->link ?? '',
+        ]);
+
+        return response()->json([
+            'id' => (string) $notification->id,
+            'userId' => (string) $notification->user_id,
+            'title' => $notification->title,
+            'message' => $notification->message,
+            'type' => $notification->type,
+            'read' => $notification->read,
+            'createdAt' => $notification->created_at,
+            'link' => $notification->link,
+        ], 201);
+    }
+
     public function markRead(int $id): JsonResponse
     {
         $notification = Notification::findOrFail($id);

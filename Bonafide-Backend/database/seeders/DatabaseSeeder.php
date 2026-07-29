@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             'phone' => '+1 (555) 123-4567',
         ]);
 
+        // Original general-subject teachers
         $teacher1 = User::create([
             'name' => 'Emma Wilson',
             'email' => 'emma@example.com',
@@ -34,7 +35,9 @@ class DatabaseSeeder extends Seeder
             'hourly_rate' => 45,
             'bio' => 'Experienced math and science teacher.',
             'subjects' => ['Mathematics', 'Physics', 'Chemistry'],
-            'availability' => json_decode('[]'),
+            'availability' => [],
+            'education' => 'B.S. in Mathematics Education',
+            'languages' => ['English'],
             'location' => 'New York, NY',
         ]);
 
@@ -54,7 +57,9 @@ class DatabaseSeeder extends Seeder
             'hourly_rate' => 40,
             'bio' => 'Passionate English literature teacher.',
             'subjects' => ['English', 'Literature', 'Writing'],
-            'availability' => json_decode('[]'),
+            'availability' => [],
+            'education' => 'M.A. in English Literature',
+            'languages' => ['English'],
             'location' => 'Los Angeles, CA',
         ]);
 
@@ -65,5 +70,11 @@ class DatabaseSeeder extends Seeder
             'role' => 'admin',
             'phone' => '+1 (555) 456-7890',
         ]);
+
+        // Special needs specialist teachers
+        $this->call(TeacherSeeder::class);
+
+        // Test bookings with a child
+        $this->call(BookingSeeder::class);
     }
 }

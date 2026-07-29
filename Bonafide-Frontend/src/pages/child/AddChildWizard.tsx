@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -10,16 +10,22 @@ import {
   Camera,
   Check,
   Upload,
+  Star,
   GraduationCap,
+  Briefcase,
+  DollarSign,
+  ArrowRight,
+  Loader2,
+  Calendar,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { childService, teacherService } from '@/services'
+import { childService } from '@/services'
 import { LEARNING_STYLES, LEARNING_CONCERNS, GRADES, ROUTES } from '@/constants'
-import type { Teacher } from '@/types'
+import type { MatchResult } from '@/types'
 
 interface ChildForm {
   name: string
@@ -28,7 +34,7 @@ interface ChildForm {
   interests: string[]
   learningConcerns: string[]
   strengths: string[]
-  learningStyle: string
+  learningStyle: string[]
   avatar: string
 }
 
@@ -39,7 +45,7 @@ const initialForm: ChildForm = {
   interests: [],
   learningConcerns: [],
   strengths: [],
-  learningStyle: '',
+  learningStyle: [],
   avatar: '',
 }
 
@@ -49,91 +55,26 @@ const slideVariants = {
   exit: (dir: number) => ({ x: dir > 0 ? -200 : 200, opacity: 0 }),
 }
 
-function findBestMatch(teachers: Teacher[], child: ChildForm): Teacher {
-  const childInterests = child.interests.map((i) => i.toLowerCase())
-  const childConcerns = child.learningConcerns.map((c) => c.toLowerCase())
-
-  const scored = teachers.map((teacher) => {
-    let score = 0
-    const teacherSubjects = teacher.subjects.map((s) => s.toLowerCase())
-    const teacherSpec = teacher.specialization.map((s) => s.toLowerCase())
-
-    const subjectOverlap = childInterests.filter((i) =>
-      teacherSubjects.some((s) => s.includes(i) || i.includes(s))
-    ).length
-    score += subjectOverlap * 15
-
-    const specOverlap = childInterests.filter((i) =>
-      teacherSpec.some((s) => s.includes(i) || i.includes(s))
-    ).length
-    score += specOverlap * 10
-
-    const learningStyleMap: Record<string, string[]> = {
-      Visual: ['Art', 'Drawing', 'Design'],
-      Auditory: ['Music', 'Language'],
-      'Reading/Writing': ['English', 'Literature', 'History'],
-      Kinesthetic: ['Sports', 'Building', 'Science'],
-    }
-    const matchingSubjects = learningStyleMap[child.learningStyle] || []
-    const styleMatch = teacherSubjects.some((s) =>
-      matchingSubjects.some((m) => s.includes(m.toLowerCase()))
-    )
-    if (styleMatch) score += 10
-
-    score += teacher.rating * 5
-    score += Math.min(teacher.experience, 10)
-
-    if (childConcerns.some((c) => c.includes('focus') || c.includes('adhd'))) {
-      if (teacher.bio.toLowerCase().includes('patient') || teacher.bio.toLowerCase().includes('focus')) score += 5
-    }
-
-    return { teacher, score }
-  })
-
-  scored.sort((a, b) => b.score - a.score)
-  return scored[0]?.teacher || teachers[0]
-}
-
-const matchingMessages = [
-  'Analyzing learning profile...',
-  'Scanning teacher expertise...',
-  'Checking compatibility metrics...',
-  'Evaluating teaching styles...',
-  'Finding the perfect match...',
-]
-
 export default function AddChildWizard() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [direction, setDirection] = useState(1)
   const [form, setForm] = useState<ChildForm>(initialForm)
   const [submitting, setSubmitting] = useState(false)
-  const [matching, setMatching] = useState(false)
-  const [teachers, setTeachers] = useState<Teacher[]>([])
-  const [matchMessageIdx, setMatchMessageIdx] = useState(0)
-
-  useEffect(() => {
-    teacherService.getAll().then(setTeachers)
-  }, [])
-
-  useEffect(() => {
-    if (!matching) return
-    const msgInterval = setInterval(() => {
-      setMatchMessageIdx((prev) => (prev + 1) % matchingMessages.length)
-    }, 1200)
-    return () => clearInterval(msgInterval)
-  }, [matching])
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false)
+  const [newChildId, setNewChildId] = useState<string | null>(null)
+  const [newChildTeachers, setNewChildTeachers] = useState<MatchResult[]>([])
 
   const updateField = <K extends keyof ChildForm>(key: K, value: ChildForm[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
-  const toggleArrayItem = (key: 'interests' | 'learningConcerns' | 'strengths', value: string) => {
+  const toggleArrayItem = (key: 'interests' | 'learningConcerns' | 'strengths' | 'learningStyle', value: string) => {
     setForm((prev) => ({
       ...prev,
-      [key]: prev[key].includes(value)
-        ? prev[key].filter((v) => v !== value)
-        : [...prev[key], value],
+      [key]: (prev[key] as string[]).includes(value)
+        ? (prev[key] as string[]).filter((v) => v !== value)
+        : [...(prev[key] as string[]), value],
     }))
   }
 
@@ -146,35 +87,51 @@ export default function AddChildWizard() {
     }
   }
 
-  const isStepValid = () => {
-    switch (step) {
-      case 1: return form.name.trim() && form.age && form.grade
-      case 2: return true
-      case 3: return !!form.learningStyle
-      case 4: return true
-      default: return false
+  const handleSubmit = async () => {
+    setSubmitting(true)
+    try {
+      const payload = { ...form, age: Number(form.age), learningStyle: form.learningStyle.join(', '), profileCompleted: true }
+      const child = await childService.create(payload)
+      setNewChildId(child.id)
+      setSubmitting(false)
+      setLoadingRecommendations(true)
+      setDirection(1)
+      setStep(5)
+      const teachers = await childService.getRecommendedTeachers(child.id)
+      setNewChildTeachers(teachers)
+    } catch {
+      // error handled by service
+    } finally {
+      setLoadingRecommendations(false)
     }
   }
 
-  const handleSubmit = async () => {
-    setSubmitting(true)
-    const payload = { ...form, age: Number(form.age), profileCompleted: true }
-    await childService.create(payload)
-    setSubmitting(false)
-    setDirection(1)
-    setStep(6)
-    startMatching()
+  const handleSelectTeacher = async (teacherId: string) => {
+    if (!newChildId) return
+    await childService.update(newChildId, { teacherId })
+    navigate(ROUTES.PARENT_DASHBOARD)
   }
 
-  const startMatching = useCallback(async () => {
-    setMatching(true)
-    await new Promise((r) => setTimeout(r, 3000))
-    setMatching(false)
+  const handleBookSession = (teacherId: string) => {
+    if (newChildId) {
+      navigate(ROUTES.BOOKING.replace(':teacherId', teacherId), {
+        state: { preselectedChild: { id: newChildId, name: form.name } }
+      })
+    } else {
+      navigate(ROUTES.BOOKING.replace(':teacherId', teacherId))
+    }
+  }
+
+  const handleSkip = () => {
     navigate(ROUTES.PARENT_DASHBOARD)
-  }, [navigate])
+  }
+
+  const handleBrowseAll = () => {
+    navigate(ROUTES.MATCHING)
+  }
 
   const goNext = () => {
-    if (step < 4) {
+    if (step < 5) {
       setDirection(1)
       setStep((s) => s + 1)
     }
@@ -184,6 +141,17 @@ export default function AddChildWizard() {
     if (step > 1) {
       setDirection(-1)
       setStep((s) => s - 1)
+    }
+  }
+
+  const isStepValid = () => {
+    switch (step) {
+      case 1: return form.name.trim() && form.age && form.grade && form.interests.length > 0
+      case 2: return true
+      case 3: return form.learningStyle.length > 0
+      case 4: return true
+      case 5: return true
+      default: return false
     }
   }
 
@@ -234,7 +202,9 @@ export default function AddChildWizard() {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">Interests</label>
+                  <label className="mb-1 block text-xs font-medium text-gray-600">
+                    Interests <span className="text-red-400">*</span>
+                  </label>
                   <div className="flex flex-wrap gap-2">
                     {['Space', 'Dinosaurs', 'Building', 'Reading', 'Art', 'Music', 'Sports', 'Science', 'Coding', 'Animals'].map(
                       (interest) => (
@@ -285,7 +255,8 @@ export default function AddChildWizard() {
                   <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                     <Sparkles className="h-4 w-4" /> Strengths
                   </h3>
-                  <p className="mb-3 text-xs text-gray-500">Select your child's key strengths</p>
+                  <p className="mb-1 text-xs text-gray-500">Select your child's key strengths</p>
+                  <p className="mb-3 text-[10px] text-gray-400">For better matching</p>
                   <div className="flex flex-wrap gap-2">
                     {[
                       'Creative Thinking',
@@ -324,7 +295,7 @@ export default function AddChildWizard() {
                 <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                   <Sparkles className="h-4 w-4" /> Learning Style
                 </h3>
-                <p className="text-xs text-gray-500">How does your child learn best?</p>
+                <p className="text-xs text-gray-500">How does your child learn best? You can select multiple.</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {LEARNING_STYLES.map((style) => {
                     const descriptions: Record<string, string> = {
@@ -337,9 +308,9 @@ export default function AddChildWizard() {
                       <button
                         key={style}
                         type="button"
-                        onClick={() => updateField('learningStyle', style)}
+                        onClick={() => toggleArrayItem('learningStyle', style)}
                         className={`rounded-xl border p-4 text-left transition-all ${
-                          form.learningStyle === style
+                          form.learningStyle.includes(style)
                             ? 'border-primary bg-primary-light ring-1 ring-primary'
                             : 'border-border hover:border-gray-300'
                         }`}
@@ -394,78 +365,182 @@ export default function AddChildWizard() {
                 </div>
               </div>
             )}
+
+            {step === 5 && (
+              <div className="space-y-4">
+                {loadingRecommendations ? (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <div className="relative mb-8">
+                      <motion.div
+                        className="h-24 w-24 rounded-full border-4 border-primary/20 border-t-primary"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                      />
+                      <motion.div
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                        animate={{ scale: [1, 1.15, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        <GraduationCap className="h-10 w-10 text-primary" />
+                      </motion.div>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-700">AI is analyzing the best teacher match for your child...</h3>
+                    <p className="mt-4 text-xs text-gray-400">Assessing learning profile and matching with tutors</p>
+                  </div>
+                ) : newChildTeachers.length === 0 ? (
+                  <div className="py-12 text-center">
+                    <GraduationCap className="mx-auto h-12 w-12 text-gray-300" />
+                    <p className="mt-3 text-sm text-gray-500">No matching teachers found right now.</p>
+                    <p className="text-xs text-gray-400">You can browse all teachers later.</p>
+                    <div className="mt-4 flex justify-center gap-3">
+                      <Button variant="outline" onClick={handleBrowseAll}>Browse All Teachers</Button>
+                      <Button onClick={handleSkip}>Continue</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold text-gray-900">AI Match Results</h3>
+                      <p className="text-sm text-gray-500">Based on your child's learning profile</p>
+                    </div>
+
+                    <Card className="relative overflow-hidden border-2 border-primary shadow-lg">
+                      <div className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-bold text-white">
+                        Best Match — {newChildTeachers[0].compatibilityScore}%
+                      </div>
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          <Avatar className="h-16 w-16">
+                            {newChildTeachers[0].avatar ? <AvatarImage src={newChildTeachers[0].avatar} /> : null}
+                            <AvatarFallback className="text-lg">{newChildTeachers[0].name[0]}</AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-lg font-bold text-gray-900">{newChildTeachers[0].name}</p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {newChildTeachers[0].subjects.slice(0, 4).map((s) => (
+                                <span key={s} className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-600">
+                                  {s}
+                                </span>
+                              ))}
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
+                              <span className="flex items-center gap-1"><Star className="h-4 w-4 text-amber-400" />{newChildTeachers[0].rating}</span>
+                              <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />{newChildTeachers[0].experience}yr exp</span>
+                              <span className="flex items-center gap-1"><DollarSign className="h-4 w-4" />${newChildTeachers[0].hourlyRate}/hr</span>
+                            </div>
+                            {newChildTeachers[0].matchReasons.length > 0 && (
+                              <div className="mt-3 space-y-1">
+                                {newChildTeachers[0].matchReasons.map((r, i) => (
+                                  <p key={i} className="text-xs text-green-600">✓ {r}</p>
+                                ))}
+                              </div>
+                            )}
+                            <div className="mt-4 flex gap-3">
+                              <Button size="sm" onClick={() => handleBookSession(newChildTeachers[0].teacherId)}>
+                                <Calendar className="mr-1 h-4 w-4" /> Book Session
+                              </Button>
+                              <Button variant="outline" size="sm" onClick={handleBrowseAll}>
+                                Browse All
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {newChildTeachers.length > 1 && (
+                      <div>
+                        <h4 className="mb-3 text-sm font-semibold text-gray-700">Other Recommended Teachers</h4>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {newChildTeachers.slice(1).map((teacher) => (
+                            <Card key={teacher.teacherId} className="relative overflow-hidden">
+                              <div className="absolute right-2 top-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                                {teacher.compatibilityScore}% match
+                              </div>
+                              <CardContent className="p-4">
+                                <div className="flex items-start gap-3">
+                                  <Avatar className="h-10 w-10">
+                                    {teacher.avatar ? <AvatarImage src={teacher.avatar} /> : null}
+                                    <AvatarFallback className="text-sm">{teacher.name[0]}</AvatarFallback>
+                                  </Avatar>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-semibold text-gray-900">{teacher.name}</p>
+                                    <div className="mt-1 flex flex-wrap gap-1.5">
+                                      {teacher.subjects.slice(0, 3).map((s) => (
+                                        <span key={s} className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-600">
+                                          {s}
+                                        </span>
+                                      ))}
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
+                                      <span className="flex items-center gap-1"><Star className="h-3 w-3 text-amber-400" />{teacher.rating}</span>
+                                      <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" />{teacher.experience}yr</span>
+                                      <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />${teacher.hourlyRate}/hr</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  className="mt-3 w-full"
+                                  onClick={() => handleBookSession(teacher.teacherId)}
+                                >
+                                  <Calendar className="mr-1 h-3.5 w-3.5" /> Book Session
+                                </Button>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex justify-center gap-3 pt-2">
+                      <Button variant="outline" onClick={handleBrowseAll}>
+                        <ArrowRight className="mr-1.5 h-4 w-4" /> Browse All Teachers
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={handleSkip}
+                        className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        Skip for now
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
 
-      <div className="flex items-center justify-between border-t pt-5">
-        <div className="flex gap-2">
-          {step > 1 && (
-            <Button variant="outline" size="sm" onClick={goPrev}>
-              <ChevronLeft className="mr-1 h-4 w-4" /> Previous
-            </Button>
-          )}
+      {step < 5 && (
+        <div className="flex items-center justify-between border-t pt-5">
+          <div>
+            {step > 1 && (
+              <Button variant="outline" size="sm" onClick={goPrev}>
+                <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {step < 4 ? (
+              <Button size="sm" onClick={goNext} disabled={!isStepValid()}>
+                Next <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button size="sm" onClick={handleSubmit} disabled={submitting}>
+                {submitting ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="mr-1 h-4 w-4" />
+                )}
+                Complete Profile
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="flex gap-2">
-          {step < 4 ? (
-            <Button size="sm" onClick={goNext} disabled={!isStepValid()}>
-              Next <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          ) : (
-            <Button size="sm" onClick={handleSubmit} disabled={!isStepValid() || submitting}>
-              {submitting ? (
-                'Saving...'
-              ) : (
-                <>
-                  <Check className="mr-1 h-4 w-4" /> Complete Profile
-                </>
-              )}
-            </Button>
-          )}
-        </div>
-      </div>
+      )}
     </>
-  )
-
-  const matchingScreen = (
-    <div className="flex flex-col items-center justify-center py-16">
-      <div className="relative mb-8">
-        <motion.div
-          className="h-24 w-24 rounded-full border-4 border-primary/20 border-t-primary"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-        />
-        <motion.div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-          animate={{ scale: [1, 1.15, 1] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-        >
-          <GraduationCap className="h-10 w-10 text-primary" />
-        </motion.div>
-      </div>
-
-      <motion.h3
-        key={matchMessageIdx}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-lg font-semibold text-gray-700"
-      >
-        {matchingMessages[matchMessageIdx]}
-      </motion.h3>
-
-      <div className="mt-8 flex gap-2">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <motion.div
-            key={i}
-            className="h-2 w-2 rounded-full bg-primary"
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-          />
-        ))}
-      </div>
-
-      <p className="mt-6 text-xs text-gray-400">This may take a few seconds...</p>
-    </div>
   )
 
   return (
@@ -476,40 +551,28 @@ export default function AddChildWizard() {
     >
       <div>
         <h1 className="text-2xl font-bold">Add Your Child</h1>
-        <p className="text-sm text-gray-500">
-          {step <= 4
-            ? 'Create a learning profile and get matched with the perfect tutor'
-            : 'Finding the ideal teacher...'}
-        </p>
+        <p className="text-sm text-gray-500">Create a learning profile and get matched with the perfect tutor</p>
       </div>
 
-      {step <= 4 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">
-              {step === 1 ? 'Basic Info' : step === 2 ? 'Concerns & Strengths' : step === 3 ? 'Learning Style' : 'Photo'}
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-2 w-2 rounded-full transition-colors ${
-                    i + 1 <= step ? 'bg-primary' : 'bg-gray-200'
-                  }`}
-                />
-              ))}
-              <span className="ml-2 text-xs text-gray-500">Step {step}/4</span>
-            </div>
-          </CardHeader>
-          <CardContent>{formSteps}</CardContent>
-        </Card>
-      )}
-
-      {step === 6 && (
-        <Card>
-          <CardContent>{matchingScreen}</CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-base">
+            {step === 1 ? 'Basic Info' : step === 2 ? 'Concerns & Strengths' : step === 3 ? 'Learning Style' : step === 4 ? 'Photo' : 'AI Matching'}
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className={`h-2 w-2 rounded-full transition-colors ${
+                  i + 1 <= step ? 'bg-primary' : 'bg-gray-200'
+                }`}
+              />
+            ))}
+            <span className="ml-2 text-xs text-gray-500">Step {Math.min(step, 4)}/4</span>
+          </div>
+        </CardHeader>
+        <CardContent>{formSteps}</CardContent>
+      </Card>
     </motion.div>
   )
 }

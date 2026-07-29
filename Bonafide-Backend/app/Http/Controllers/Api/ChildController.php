@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\Child;
 use App\Models\Progress;
 use App\Models\User;
+use App\Services\GroqService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -41,7 +42,6 @@ class ChildController extends ApiController
             'learningConcerns' => 'learning_concerns',
             'learningStyle' => 'learning_style',
             'strengths' => 'strengths',
-            'schedule' => 'schedule',
             'profileCompleted' => 'profile_completed',
             'teacherId' => 'teacher_id',
             'learning_concerns' => 'learning_concerns',
@@ -69,7 +69,6 @@ class ChildController extends ApiController
             'learningConcerns' => 'learning_concerns',
             'learningStyle' => 'learning_style',
             'strengths' => 'strengths',
-            'schedule' => 'schedule',
             'profileCompleted' => 'profile_completed',
             'teacherId' => 'teacher_id',
             'learning_concerns' => 'learning_concerns',
@@ -92,108 +91,130 @@ class ChildController extends ApiController
     {
         $child = Child::findOrFail($id);
         $interests = array_map('strtolower', $child->interests ?? []);
-        $childSchedule = $child->schedule ?? [];
-
+        $childConcerns = array_map('strtolower', $child->learning_concerns ?? []);
+        $childStrengths = array_map('strtolower', $child->strengths ?? []);
         $teachers = User::where('role', 'teacher')
             ->with('teacherDetail')
             ->get()
-            ->filter(function ($teacher) use ($interests, $childSchedule) {
+            ->filter(function ($teacher) use ($interests) {
                 $detail = $teacher->teacherDetail;
                 if (!$detail) return false;
 
                 $subjects = array_map('strtolower', $detail->subjects ?? []);
                 $availability = $detail->availability ?? [];
 
-                // Score: 0-100
                 $score = 0;
-
-                // Subject match (up to 50 points)
                 if (!empty($interests) && !empty($subjects)) {
                     $matches = array_intersect($interests, $subjects);
                     $score += min(50, count($matches) * 15);
                 }
-
-                // Schedule overlap (up to 30 points)
-                if (!empty($childSchedule) && !empty($availability)) {
-                    foreach ($childSchedule as $cs) {
-                        foreach ($availability as $avail) {
-                            if (strtolower($cs['day']) === strtolower($avail['day'])) {
-                                $score += 10;
-                                break 2;
-                            }
-                        }
-                    }
-                }
-
-                // Has any subjects/availability (up to 20 points)
                 if (!empty($subjects)) $score += 10;
                 if (!empty($availability)) $score += 10;
 
                 return $score > 0;
             })
-            ->values()
-            ->map(function ($teacher) use ($interests, $childSchedule) {
-                $detail = $teacher->teacherDetail;
-                $subjects = array_map('strtolower', $detail->subjects ?? []);
-                $availability = $detail->availability ?? [];
+            ->values();
 
-                $score = 0;
-                $reasons = [];
+        if ($teachers->isEmpty()) {
+            return response()->json([]);
+        }
 
-                if (!empty($interests) && !empty($subjects)) {
-                    $matches = array_intersect($interests, $subjects);
-                    $score += min(50, count($matches) * 15);
-                    if (!empty($matches)) {
-                        $reasons[] = 'Teaches subjects your child is interested in';
-                    }
+        $childInfo = $child->toArray();
+        $teachersData = $teachers->map(fn ($t) => [
+            'name' => $t->name,
+            'subjects' => $t->teacherDetail->subjects ?? [],
+            'bio' => $t->teacherDetail->bio ?? '',
+            'experience' => $t->teacherDetail->experience ?? 0,
+            'education' => $t->teacherDetail->education ?? '',
+            'rating' => $t->teacherDetail->rating ?? 0,
+            'learning_concerns' => $t->teacherDetail->learning_concerns ?? [],
+            'strengths_support' => $t->teacherDetail->strengths_support ?? [],
+        ])->toArray();
+
+        $groq = app(GroqService::class);
+        $aiMatches = $groq->matchTeachers($childInfo, $teachersData);
+
+        $aiByIndex = [];
+        if (is_array($aiMatches)) {
+            foreach ($aiMatches as $m) {
+                if (isset($m['teacherIndex'])) {
+                    $aiByIndex[$m['teacherIndex']] = $m;
                 }
+            }
+        }
 
-                if (!empty($childSchedule) && !empty($availability)) {
-                    foreach ($childSchedule as $cs) {
-                        foreach ($availability as $avail) {
-                            if (strtolower($cs['day']) === strtolower($avail['day'])) {
-                                $score += 10;
-                                $reasons[] = 'Available on ' . $cs['day'];
-                                break 2;
-                            }
-                        }
-                    }
+        $result = $teachers->map(function ($teacher, $idx) use ($interests, $childConcerns, $childStrengths, $aiByIndex) {
+            $detail = $teacher->teacherDetail;
+            $subjects = array_map('strtolower', $detail->subjects ?? []);
+            $availability = $detail->availability ?? [];
+            $teacherConcerns = array_map('strtolower', $detail->learning_concerns ?? []);
+            $teacherStrengths = array_map('strtolower', $detail->strengths_support ?? []);
+
+            $score = 0;
+            $reasons = [];
+
+            if (!empty($interests) && !empty($subjects)) {
+                $matches = array_intersect($interests, $subjects);
+                $score += min(50, count($matches) * 15);
+                if (!empty($matches)) {
+                    $reasons[] = 'Teaches subjects your child is interested in';
                 }
+            }
 
-                if (!empty($subjects)) $score += 10;
-                if (!empty($availability)) $score += 10;
+            if (!empty($childConcerns) && !empty($teacherConcerns)) {
+                $concernMatches = array_intersect($childConcerns, $teacherConcerns);
+                $score += min(30, count($concernMatches) * 15);
+                if (!empty($concernMatches)) {
+                    $reasons[] = 'Specializes in your child\'s learning needs';
+                }
+            }
 
-                return [
-                    'teacherId' => (string) $teacher->id,
-                    'name' => $teacher->name,
-                    'avatar' => $teacher->avatar,
-                    'subjects' => $detail->subjects ?? [],
-                    'rating' => (float) ($detail->rating ?? 0),
-                    'hourlyRate' => (float) ($detail->hourly_rate ?? 0),
-                    'experience' => (int) ($detail->experience ?? 0),
-                    'education' => $detail->education ?? '',
-                    'bio' => $detail->bio ?? '',
-                    'compatibilityScore' => min(100, $score),
-                    'matchReasons' => array_slice($reasons, 0, 3),
-                ];
-            })
+            if (!empty($childStrengths) && !empty($teacherStrengths)) {
+                $strengthMatches = array_intersect($childStrengths, $teacherStrengths);
+                $score += min(20, count($strengthMatches) * 10);
+                if (!empty($strengthMatches)) {
+                    $reasons[] = 'Can nurture your child\'s strengths';
+                }
+            }
+
+            if (!empty($subjects)) $score += 10;
+            if (!empty($availability)) $score += 10;
+
+            $ai = $aiByIndex[$idx] ?? null;
+            if ($ai) {
+                $compatibilityScore = (int) ($ai['compatibilityScore'] ?? $score);
+                $aiReasons = $ai['matchReasons'] ?? [];
+                $reasons = array_merge($reasons, $aiReasons);
+            } else {
+                $compatibilityScore = min(100, $score);
+            }
+
+            return [
+                'teacherId' => (string) $teacher->id,
+                'name' => $teacher->name,
+                'avatar' => $teacher->avatar,
+                'subjects' => $detail->subjects ?? [],
+                'rating' => (float) ($detail->rating ?? 0),
+                'hourlyRate' => (float) ($detail->hourly_rate ?? 0),
+                'experience' => (int) ($detail->experience ?? 0),
+                'education' => $detail->education ?? '',
+                'bio' => $detail->bio ?? '',
+                'compatibilityScore' => min(100, $compatibilityScore),
+                'matchReasons' => array_slice($reasons, 0, 3),
+            ];
+        })
             ->sortByDesc('compatibilityScore')
             ->values();
 
-        return response()->json($teachers);
+        return response()->json($result);
     }
 
     public function learningProfile(int $id): JsonResponse
     {
         $child = Child::findOrFail($id);
 
-        // Initial AI assessment
         $assessment = Assessment::where('child_id', $id)->first();
-
-        // Progress records per subject
         $progressRecords = Progress::where('child_id', $id)->get();
-
-        // Feedback history from completed bookings
         $completedBookings = Booking::where('child_id', $id)
             ->where('status', 'completed')
             ->whereNotNull('feedback')
@@ -207,7 +228,6 @@ class ChildController extends ApiController
             'feedback' => $b->feedback,
         ]);
 
-        // Compute current learning profile from latest assessment + feedback
         $profile = [
             'learningStyle' => $child->learning_style ?? '',
             'interests' => $child->interests ?? [],
@@ -225,15 +245,42 @@ class ChildController extends ApiController
             ]);
         }
 
+        $subjects = $progressRecords->map(fn ($p) => [
+            'name' => $p->subject,
+            'progress' => $p->overall_progress,
+            'scores' => $p->scores ?? [],
+        ])->toArray();
+
+        $groq = app(GroqService::class);
+        $aiProgress = $groq->analyzeProgress(
+            $child->toArray(),
+            $subjects,
+            $feedbackHistory->toArray()
+        );
+
+        if (!empty($aiProgress)) {
+            if (isset($aiProgress['learningTrends'])) {
+                $profile['learningTrends'] = $aiProgress['learningTrends'];
+            }
+            if (isset($aiProgress['updatedProfile'])) {
+                $profile['updatedProfile'] = $aiProgress['updatedProfile'];
+            }
+            if (isset($aiProgress['recommendations'])) {
+                $profile['recommendations'] = $aiProgress['recommendations'];
+            }
+            if (isset($aiProgress['strengthsEmerging'])) {
+                $profile['strengthsEmerging'] = $aiProgress['strengthsEmerging'];
+            }
+            if (isset($aiProgress['areasNeedingAttention'])) {
+                $profile['areasNeedingAttention'] = $aiProgress['areasNeedingAttention'];
+            }
+        }
+
         return response()->json([
             'childId' => (string) $child->id,
             'childName' => $child->name,
             'profile' => $profile,
-            'subjects' => $progressRecords->map(fn ($p) => [
-                'name' => $p->subject,
-                'progress' => $p->overall_progress,
-                'scores' => $p->scores ?? [],
-            ]),
+            'subjects' => $subjects,
             'feedbackHistory' => $feedbackHistory,
         ]);
     }
@@ -251,7 +298,7 @@ class ChildController extends ApiController
             'strengths' => $child->strengths ?? [],
             'learningStyle' => $child->learning_style ?? '',
             'interests' => $child->interests ?? [],
-            'schedule' => $child->schedule ?? [],
+
             'profileCompleted' => (bool) $child->profile_completed,
             'teacherId' => $child->teacher_id ? (string) $child->teacher_id : null,
         ];

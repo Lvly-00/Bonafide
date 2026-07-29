@@ -11,6 +11,7 @@ class TeacherDetail extends Model
         'user_id', 'specialization', 'experience', 'rating', 'total_students',
         'total_sessions', 'hourly_rate', 'bio', 'availability', 'certificates',
         'gallery', 'subjects', 'education', 'languages', 'location',
+        'learning_concerns', 'strengths_support',
     ];
 
     protected function casts(): array
@@ -22,6 +23,8 @@ class TeacherDetail extends Model
             'gallery' => 'array',
             'subjects' => 'array',
             'languages' => 'array',
+            'learning_concerns' => 'array',
+            'strengths_support' => 'array',
         ];
     }
 

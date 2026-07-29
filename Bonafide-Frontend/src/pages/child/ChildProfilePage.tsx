@@ -4,24 +4,25 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronLeft,
   ChevronRight,
-  Save,
   User,
   AlertTriangle,
   Sparkles,
-  Calendar,
   Camera,
   Check,
   Plus,
   Upload,
-  X,
   Pencil,
   Trash2,
   Search,
-  Clock,
   BookOpen,
   Brain,
   Star,
   Loader2,
+  GraduationCap,
+  Briefcase,
+  DollarSign,
+  ArrowRight,
+  Calendar,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -35,8 +36,6 @@ import {
   LEARNING_STYLES,
   LEARNING_CONCERNS,
   GRADES,
-  DAYS,
-  TIME_SLOTS,
   ROUTES,
 } from '@/constants'
 import type { Child, MatchResult } from '@/types'
@@ -48,8 +47,7 @@ interface ChildForm {
   interests: string[]
   learningConcerns: string[]
   strengths: string[]
-  learningStyle: string
-  schedule: { day: string; timeSlots: { start: string; end: string }[] }[]
+  learningStyle: string[]
   avatar: string
 }
 
@@ -60,8 +58,7 @@ const initialForm: ChildForm = {
   interests: [],
   learningConcerns: [],
   strengths: [],
-  learningStyle: '',
-  schedule: [],
+  learningStyle: [],
   avatar: '',
 }
 
@@ -81,6 +78,10 @@ export default function ChildProfilePage() {
   const [form, setForm] = useState<ChildForm>(initialForm)
   const [recommendedTeachers, setRecommendedTeachers] = useState<Record<string, MatchResult[]>>({})
   const [loadingTeachers, setLoadingTeachers] = useState<Record<string, boolean>>({})
+  const [submitting, setSubmitting] = useState(false)
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false)
+  const [newChildId, setNewChildId] = useState<string | null>(null)
+  const [newChildTeachers, setNewChildTeachers] = useState<MatchResult[]>([])
 
   useEffect(() => {
     if (!user?.id) return
@@ -124,8 +125,7 @@ export default function ChildProfilePage() {
       interests: child.interests || [],
       learningConcerns: child.learningConcerns || [],
       strengths: child.strengths || [],
-      learningStyle: child.learningStyle || '',
-      schedule: child.schedule || [],
+      learningStyle: child.learningStyle ? child.learningStyle.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
       avatar: child.avatar || '',
     })
     setStep(1)
@@ -141,7 +141,7 @@ export default function ChildProfilePage() {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
-  const toggleArrayItem = (key: 'interests' | 'learningConcerns' | 'strengths', value: string) => {
+  const toggleArrayItem = (key: 'interests' | 'learningConcerns' | 'strengths' | 'learningStyle', value: string) => {
     setForm((prev) => ({
       ...prev,
       [key]: prev[key].includes(value)
@@ -150,52 +150,45 @@ export default function ChildProfilePage() {
     }))
   }
 
-  const addScheduleSlot = () => {
-    setForm((prev) => ({
-      ...prev,
-      schedule: [...prev.schedule, { day: 'Monday', timeSlots: [{ start: '16:00', end: '17:00' }] }],
-    }))
+  const handleSubmit = async () => {
+    setSubmitting(true)
+    const payload = { ...form, age: Number(form.age), learningStyle: form.learningStyle.join(', '), profileCompleted: true }
+    try {
+      let child
+      if (editingChild) {
+        child = await childService.update(editingChild, payload)
+      } else {
+        child = await childService.create(payload)
+      }
+      setNewChildId(child.id)
+      setSubmitting(false)
+      setLoadingRecommendations(true)
+      setDirection(1)
+      setStep(5)
+      const teachers = await childService.getRecommendedTeachers(child.id)
+      setNewChildTeachers(teachers)
+    } catch {
+      // error handled by service
+    } finally {
+      setLoadingRecommendations(false)
+    }
   }
 
-  const updateScheduleDay = (idx: number, day: string) => {
-    setForm((prev) => {
-      const s = [...prev.schedule]
-      s[idx] = { ...s[idx], day }
-      return { ...prev, schedule: s }
-    })
+  const handleSkip = () => {
+    resetForm()
   }
 
-  const updateScheduleTime = (idx: number, slotIdx: number, field: 'start' | 'end', value: string) => {
-    setForm((prev) => {
-      const s = [...prev.schedule]
-      const slots = [...s[idx].timeSlots]
-      slots[slotIdx] = { ...slots[slotIdx], [field]: value }
-      s[idx] = { ...s[idx], timeSlots: slots }
-      return { ...prev, schedule: s }
-    })
+  const handleBrowseAll = () => {
+    navigate(ROUTES.MATCHING)
   }
 
-  const removeScheduleSlot = (idx: number) => {
-    setForm((prev) => ({
-      ...prev,
-      schedule: prev.schedule.filter((_, i) => i !== idx),
-    }))
-  }
-
-  const handleSaveDraft = () => {
-    childService
-      .update(editingChild || `draft-${Date.now()}`, { ...form, age: Number(form.age), profileCompleted: step === 5 })
-      .then(() => {
-        if (!editingChild) resetForm()
+  const handleBookSession = (teacherId: string) => {
+    if (newChildId) {
+      navigate(ROUTES.BOOKING.replace(':teacherId', teacherId), {
+        state: { preselectedChild: { id: newChildId, name: form.name } }
       })
-  }
-
-  const handleSubmit = () => {
-    const payload = { ...form, age: Number(form.age), profileCompleted: true }
-    if (editingChild) {
-      childService.update(editingChild, payload).then(resetForm)
     } else {
-      childService.create(payload).then(resetForm)
+      navigate(ROUTES.BOOKING.replace(':teacherId', teacherId))
     }
   }
 
@@ -226,8 +219,8 @@ export default function ChildProfilePage() {
     switch (step) {
       case 1: return form.name.trim() && form.age && form.grade
       case 2: return true
-      case 3: return !!form.learningStyle
-      case 4: return form.schedule.length > 0
+      case 3: return form.learningStyle.length > 0
+      case 4: return true
       case 5: return true
       default: return false
     }
@@ -320,27 +313,7 @@ export default function ChildProfilePage() {
                       </div>
                     )}
 
-                    {child.schedule.length > 0 && (
-                      <div>
-                        <p className="mb-1 text-[11px] font-medium text-gray-500">Schedule</p>
-                        <div className="flex flex-wrap gap-1">
-                          {child.schedule.slice(0, 3).map((s, si) => (
-                            <span
-                              key={`${s.day}-${si}`}
-                              className="inline-flex items-center gap-1 rounded-md bg-gray-50 px-2 py-0.5 text-[10px] text-gray-600"
-                            >
-                              <Clock className="h-3 w-3" />
-                              {s.day.slice(0, 3)} {s.timeSlots[0]?.start}
-                            </span>
-                          ))}
-                          {child.schedule.length > 3 && (
-                            <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-0.5 text-[10px] text-gray-500">
-                              +{child.schedule.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
+
                   </div>
 
                   {loadingTeachers[child.id] ? (
@@ -447,7 +420,7 @@ export default function ChildProfilePage() {
                   }`}
                 />
               ))}
-              <span className="ml-2 text-xs text-gray-500">Step {step}/5</span>
+              <span className="ml-2 text-xs text-gray-500">Step {Math.min(step, 4)}/4</span>
             </div>
           </CardHeader>
           <CardContent>
@@ -547,7 +520,8 @@ export default function ChildProfilePage() {
                         <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                           <Sparkles className="h-4 w-4" /> Strengths
                         </h3>
-                        <p className="mb-3 text-xs text-gray-500">Select your child's key strengths</p>
+                        <p className="mb-1 text-xs text-gray-500">Select your child's key strengths</p>
+                        <p className="mb-3 text-[10px] text-gray-400">For better matching</p>
                         <div className="flex flex-wrap gap-2">
                           {[
                             'Creative Thinking',
@@ -601,9 +575,9 @@ export default function ChildProfilePage() {
                             <button
                               key={style}
                               type="button"
-                              onClick={() => updateField('learningStyle', style)}
+                              onClick={() => toggleArrayItem('learningStyle', style)}
                               className={`rounded-xl border p-4 text-left transition-all ${
-                                form.learningStyle === style
+                                form.learningStyle.includes(style)
                                   ? 'border-primary bg-primary-light ring-1 ring-primary'
                                   : 'border-border hover:border-gray-300'
                               }`}
@@ -618,61 +592,6 @@ export default function ChildProfilePage() {
                   )}
 
                   {step === 4 && (
-                    <div className="space-y-4">
-                      <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                        <Calendar className="h-4 w-4" /> Schedule
-                      </h3>
-                      <p className="text-xs text-gray-500">
-                        Add available days and time slots for sessions
-                      </p>
-                      {form.schedule.map((slot, idx) => (
-                        <div key={idx} className="flex flex-wrap items-end gap-3 rounded-xl border p-4">
-                          <div className="min-w-[140px]">
-                            <label className="mb-1 block text-xs font-medium text-gray-600">Day</label>
-                            <Select
-                              value={slot.day}
-                              onChange={(e) => updateScheduleDay(idx, e.target.value)}
-                              options={DAYS.map((d) => ({ value: d, label: d }))}
-                            />
-                          </div>
-                          <div>
-                            <label className="mb-1 block text-xs font-medium text-gray-600">Start</label>
-                            <Select
-                              value={slot.timeSlots[0]?.start || ''}
-                              onChange={(e) => updateScheduleTime(idx, 0, 'start', e.target.value)}
-                              options={TIME_SLOTS.map((t) => ({ value: t, label: t }))}
-                            />
-                          </div>
-                          <div>
-                            <label className="mb-1 block text-xs font-medium text-gray-600">End</label>
-                            <Select
-                              value={slot.timeSlots[0]?.end || ''}
-                              onChange={(e) => updateScheduleTime(idx, 0, 'end', e.target.value)}
-                              options={TIME_SLOTS.map((t) => ({ value: t, label: t }))}
-                            />
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeScheduleSlot(idx)}
-                            className="shrink-0"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={addScheduleSlot}
-                        className="gap-2"
-                      >
-                        <Plus className="h-4 w-4" /> Add Day
-                      </Button>
-                    </div>
-                  )}
-
-                  {step === 5 && (
                     <div className="space-y-4">
                       <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                         <Camera className="h-4 w-4" /> Profile Picture
@@ -713,33 +632,183 @@ export default function ChildProfilePage() {
                       </div>
                     </div>
                   )}
+
+                  {step === 5 && (
+                    <div className="space-y-4">
+                      {loadingRecommendations ? (
+                        <div className="flex flex-col items-center justify-center py-16">
+                          <div className="relative mb-8">
+                            <motion.div
+                              className="h-24 w-24 rounded-full border-4 border-primary/20 border-t-primary"
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                            />
+                            <motion.div
+                              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                              animate={{ scale: [1, 1.15, 1] }}
+                              transition={{ duration: 1.5, repeat: Infinity }}
+                            >
+                              <GraduationCap className="h-10 w-10 text-primary" />
+                            </motion.div>
+                          </div>
+                          <h3 className="text-lg font-semibold text-gray-700">AI is analyzing the best teacher match for your child...</h3>
+                          <p className="mt-4 text-xs text-gray-400">Assessing learning profile and matching with tutors</p>
+                        </div>
+                      ) : newChildTeachers.length === 0 ? (
+                        <div className="py-12 text-center">
+                          <GraduationCap className="mx-auto h-12 w-12 text-gray-300" />
+                          <p className="mt-3 text-sm text-gray-500">No matching teachers found right now.</p>
+                          <p className="text-xs text-gray-400">You can browse all teachers later.</p>
+                          <div className="mt-4 flex justify-center gap-3">
+                            <Button variant="outline" onClick={handleBrowseAll}>Browse All Teachers</Button>
+                            <Button onClick={handleSkip}>Continue</Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          <div className="text-center">
+                            <h3 className="text-lg font-semibold text-gray-900">AI Match Results</h3>
+                            <p className="text-sm text-gray-500">Based on your child's learning profile</p>
+                          </div>
+
+                          {newChildTeachers.length > 0 && (
+                            <Card className="relative overflow-hidden border-2 border-primary shadow-lg">
+                              <div className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-bold text-white">
+                                Best Match — {newChildTeachers[0].compatibilityScore}%
+                              </div>
+                              <CardContent className="p-6">
+                                <div className="flex items-start gap-4">
+                                  <Avatar className="h-16 w-16">
+                                    {newChildTeachers[0].avatar ? <AvatarImage src={newChildTeachers[0].avatar} /> : null}
+                                    <AvatarFallback className="text-lg">{newChildTeachers[0].name[0]}</AvatarFallback>
+                                  </Avatar>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-lg font-bold text-gray-900">{newChildTeachers[0].name}</p>
+                                    <div className="mt-2 flex flex-wrap gap-1.5">
+                                      {newChildTeachers[0].subjects.slice(0, 4).map((s) => (
+                                        <span key={s} className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-600">
+                                          {s}
+                                        </span>
+                                      ))}
+                                    </div>
+                                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
+                                      <span className="flex items-center gap-1"><Star className="h-4 w-4 text-amber-400" />{newChildTeachers[0].rating}</span>
+                                      <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />{newChildTeachers[0].experience}yr exp</span>
+                                      <span className="flex items-center gap-1"><DollarSign className="h-4 w-4" />${newChildTeachers[0].hourlyRate}/hr</span>
+                                    </div>
+                                    {newChildTeachers[0].matchReasons.length > 0 && (
+                                      <div className="mt-3 space-y-1">
+                                        {newChildTeachers[0].matchReasons.map((r, i) => (
+                                          <p key={i} className="text-xs text-green-600">✓ {r}</p>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <div className="mt-4 flex flex-wrap gap-2">
+                                      <Button size="sm" onClick={() => handleBookSession(newChildTeachers[0].teacherId)}>
+                                        <Calendar className="mr-1 h-4 w-4" /> Book Session
+                                      </Button>
+                                      <Button variant="outline" size="sm" onClick={handleBrowseAll}>
+                                        Browse All
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          )}
+
+                          {newChildTeachers.length > 1 && (
+                            <div>
+                              <h4 className="mb-3 text-sm font-semibold text-gray-700">Other Recommended Teachers</h4>
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                {newChildTeachers.slice(1).map((teacher) => (
+                                  <Card key={teacher.teacherId} className="relative overflow-hidden">
+                                    <div className="absolute right-2 top-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                                      {teacher.compatibilityScore}% match
+                                    </div>
+                                    <CardContent className="p-4">
+                                      <div className="flex items-start gap-3">
+                                        <Avatar className="h-10 w-10">
+                                          {teacher.avatar ? <AvatarImage src={teacher.avatar} /> : null}
+                                          <AvatarFallback className="text-sm">{teacher.name[0]}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="min-w-0 flex-1">
+                                          <p className="font-semibold text-gray-900">{teacher.name}</p>
+                                          <div className="mt-1 flex flex-wrap gap-1.5">
+                                            {teacher.subjects.slice(0, 3).map((s) => (
+                                              <span key={s} className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-600">
+                                                {s}
+                                              </span>
+                                            ))}
+                                          </div>
+                                          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
+                                            <span className="flex items-center gap-1"><Star className="h-3 w-3 text-amber-400" />{teacher.rating}</span>
+                                            <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" />{teacher.experience}yr</span>
+                                            <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />${teacher.hourlyRate}/hr</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        className="mt-3 w-full"
+                                        onClick={() => handleBookSession(teacher.teacherId)}
+                                      >
+                                        <Calendar className="mr-1 h-3.5 w-3.5" /> Book Session
+                                      </Button>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex justify-center gap-3 pt-2">
+                            <Button variant="outline" onClick={handleBrowseAll}>
+                              <ArrowRight className="mr-1.5 h-4 w-4" /> Browse All Teachers
+                            </Button>
+                            <button
+                              type="button"
+                              onClick={handleSkip}
+                              className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              Skip for now
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>
 
-            <div className="flex items-center justify-between border-t pt-5">
-              <div className="flex gap-2">
-                {step > 1 && (
-                  <Button variant="outline" size="sm" onClick={goPrev}>
-                    <ChevronLeft className="mr-1 h-4 w-4" /> Previous
-                  </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={handleSaveDraft}>
-                  <Save className="mr-1 h-4 w-4" /> Save Draft
-                </Button>
+            {step < 5 && (
+              <div className="flex items-center justify-between border-t pt-5">
+                <div>
+                  {step > 1 && (
+                    <Button variant="outline" size="sm" onClick={goPrev}>
+                      <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+                    </Button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {step < 4 ? (
+                    <Button size="sm" onClick={goNext} disabled={!isStepValid()}>
+                      Next <ChevronRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={handleSubmit} disabled={submitting}>
+                      {submitting ? (
+                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Check className="mr-1 h-4 w-4" />
+                      )}
+                      Complete Profile
+                    </Button>
+                  )}
+                </div>
               </div>
-              <div className="flex gap-2">
-                {step < 5 ? (
-                  <Button size="sm" onClick={goNext} disabled={!isStepValid()}>
-                    Next <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button size="sm" onClick={handleSubmit} disabled={!isStepValid()}>
-                    <Check className="mr-1 h-4 w-4" /> Complete Profile
-                  </Button>
-                )}
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       )}

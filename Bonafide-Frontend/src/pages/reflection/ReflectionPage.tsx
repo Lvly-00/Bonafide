@@ -10,13 +10,14 @@ import {
   Smile,
   FileText,
   User,
+  Sparkles,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
+import api from '@/services/api'
 import { mockSessions } from '@/data/sessions'
 import type { Session, TeacherReflection } from '@/types'
 
@@ -24,7 +25,7 @@ function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-const aiSuggestionMock = [
+const fallbackSuggestions = [
   'Try using music-based learning for times tables to improve retention',
   'Incorporate more visual aids for complex concepts like fractions',
   'Consider short breaks every 20 minutes to maintain focus and engagement',
@@ -51,6 +52,8 @@ export default function ReflectionPage() {
   const [savedReflections, setSavedReflections] = useState<TeacherReflection[]>([])
   const [saving, setSaving] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false)
 
   useEffect(() => {
     const completed = mockSessions.filter(
@@ -81,7 +84,28 @@ export default function ReflectionPage() {
       setNotes('')
     }
     setShowSuggestions(false)
+    setAiSuggestions([])
   }, [selectedSessionId, existingReflection])
+
+  const generateAiSuggestions = async () => {
+    if (!selectedSessionId || !studentProgress || !goals) return
+    setLoadingSuggestions(true)
+    try {
+      const subject = selectedSession?.topic || 'General'
+      const { data } = await api.post('/ai/suggestions', {
+        studentProgress,
+        goals,
+        mood: mood || 'Neutral',
+        notes: notes || 'No additional notes',
+        subject,
+      })
+      setAiSuggestions(data.suggestions || fallbackSuggestions)
+    } catch {
+      setAiSuggestions(fallbackSuggestions)
+    } finally {
+      setLoadingSuggestions(false)
+    }
+  }
 
   const handleSave = async () => {
     if (!selectedSessionId) return
@@ -95,7 +119,7 @@ export default function ReflectionPage() {
       homework,
       mood,
       notes,
-      aiSuggestions: aiSuggestionMock.slice(0, 3),
+      aiSuggestions: aiSuggestions.slice(0, 3),
       createdAt: new Date().toISOString(),
     }
     setSavedReflections((prev) => [newReflection, ...prev])
@@ -227,16 +251,30 @@ export default function ReflectionPage() {
             </CardHeader>
             {showSuggestions && (
               <CardContent>
-                <div className="space-y-2">
-                  {aiSuggestionMock.map((suggestion, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-start gap-3 rounded-xl bg-amber-50 px-4 py-3"
-                    >
-                      <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                      <p className="text-sm text-amber-800">{suggestion}</p>
+                <div className="space-y-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={generateAiSuggestions}
+                    disabled={loadingSuggestions || !studentProgress || !goals}
+                    className="gap-2"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {loadingSuggestions ? 'Generating...' : 'Generate AI Suggestions'}
+                  </Button>
+                  {aiSuggestions.length > 0 && (
+                    <div className="space-y-2">
+                      {aiSuggestions.map((suggestion, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-start gap-3 rounded-xl bg-amber-50 px-4 py-3"
+                        >
+                          <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                          <p className="text-sm text-amber-800">{suggestion}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             )}

@@ -7,6 +7,11 @@ export const notificationService = {
     return data
   },
 
+  async create(notification: { userId: string; title: string; message: string; type: string; link?: string }): Promise<Notification> {
+    const { data } = await api.post('/notifications', notification)
+    return data
+  },
+
   async markAsRead(id: string): Promise<void> {
     await api.patch(`/notifications/${id}/read`)
   },

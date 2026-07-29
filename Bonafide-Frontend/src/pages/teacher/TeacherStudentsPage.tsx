@@ -1,38 +1,44 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Search } from 'lucide-react'
+import { Search, CheckCircle2, Loader2 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { bookingService } from '@/services'
+import { bookingService, notificationService } from '@/services'
 import { useAuthStore } from '@/stores/authStore'
 import { ROUTES } from '@/constants'
 import type { Booking } from '@/types'
 
-interface Student {
+interface StudentWithBookings {
   id: string
   name: string
+  parentId: string
+  parentName: string
   progress: number
   lastSession: string
   subject: string
+  sessions: Booking[]
 }
 
 export default function TeacherStudentsPage() {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
-  const [students, setStudents] = useState<Student[]>([])
+  const [students, setStudents] = useState<StudentWithBookings[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [completing, setCompleting] = useState<string | null>(null)
 
-  useEffect(() => {
+  const fetchData = () => {
     if (!user?.id) return
     bookingService.getByTeacherId(user.id).then((data: Booking[]) => {
-      const childMap = new Map<string, { bookings: Booking[]; name: string; subject: string }>()
+      const childMap = new Map<string, { bookings: Booking[]; name: string; parentId: string; parentName: string; subject: string }>()
       data.filter(b => b.status === 'confirmed' || b.status === 'completed').forEach(b => {
         if (!childMap.has(b.childId)) {
-          childMap.set(b.childId, { bookings: [], name: b.childName, subject: b.sessionType })
+          childMap.set(b.childId, { bookings: [], name: b.childName, parentId: b.parentId, parentName: b.parentName, subject: b.sessionType })
         }
         childMap.get(b.childId)!.bookings.push(b)
       })
@@ -41,11 +47,27 @@ export default function TeacherStudentsPage() {
         const completed = info.bookings.filter(b => b.status === 'completed').length
         const progress = total > 0 ? Math.round((completed / total) * 100) : 0
         const lastSession = info.bookings.sort((a, b) => b.date.localeCompare(a.date))[0]?.date || 'N/A'
-        return { id, name: info.name, progress, lastSession, subject: info.subject }
+        return { id, name: info.name, parentId: info.parentId, parentName: info.parentName, progress, lastSession, subject: info.subject, sessions: info.bookings }
       }))
       setLoading(false)
     })
-  }, [user])
+  }
+
+  useEffect(() => { fetchData() }, [user])
+
+  const handleMarkDone = async (booking: Booking) => {
+    setCompleting(booking.id)
+    await bookingService.updateStatus(booking.id, 'completed')
+    await notificationService.create({
+      userId: booking.parentId,
+      title: 'Session Completed',
+      message: `Session with ${booking.childName} on ${booking.date} has been completed. Please take the assessment survey.`,
+      type: 'booking',
+      link: '/parent/feedback',
+    })
+    setCompleting(null)
+    fetchData()
+  }
 
   const filtered = students.filter((s) =>
     s.name.toLowerCase().includes(search.toLowerCase())
@@ -90,10 +112,7 @@ export default function TeacherStudentsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
           >
-            <Card
-              className="cursor-pointer transition-all hover:shadow-md"
-              onClick={() => navigate(ROUTES.TEACHER_STUDENT_INFO.replace(':id', student.id))}
-            >
+            <Card className="transition-all hover:shadow-md">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12">
@@ -119,6 +138,47 @@ export default function TeacherStudentsPage() {
                   <p className="mt-1.5 text-xs text-gray-400">
                     Last session: {student.lastSession}
                   </p>
+                </div>
+
+                {student.sessions.filter(b => b.status === 'confirmed').length > 0 && (
+                  <div className="mt-3 space-y-2 border-t border-border pt-3">
+                    {student.sessions.filter(b => b.status === 'confirmed').map(b => (
+                      <div key={b.id} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2">
+                        <div className="text-xs">
+                          <span className="text-gray-500">{b.date}</span>
+                          <span className="mx-1 text-gray-300">&middot;</span>
+                          <span className="text-gray-500">{b.time}</span>
+                          <span className="mx-1 text-gray-300">&middot;</span>
+                          <span className="text-gray-500">{b.duration}min</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 px-2.5 text-xs"
+                          onClick={() => handleMarkDone(b)}
+                          disabled={completing === b.id}
+                        >
+                          {completing === b.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                          )}
+                          Done
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-2 flex">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => navigate(ROUTES.TEACHER_STUDENT_INFO.replace(':id', student.id))}
+                  >
+                    View Details
+                  </Button>
                 </div>
               </CardContent>
             </Card>

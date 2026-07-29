@@ -30,6 +30,7 @@ const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 const durationOptions = [
+  { value: '1', label: '1 minute' },
   { value: '30', label: '30 minutes' },
   { value: '45', label: '45 minutes' },
   { value: '60', label: '60 minutes' },
@@ -47,7 +48,18 @@ function getDayAvailability(teacher: Teacher, dayName: string) {
   const avail = teacher.availability?.find(
     (a) => a.day.toLowerCase() === fullName.toLowerCase()
   )
-  return avail?.slots || []
+  const slots = avail?.slots || []
+  if (slots.length === 0) return []
+  if (typeof slots[0] === 'string') {
+    const result: { start: string; end: string }[] = []
+    for (const t of slots as string[]) {
+      const [h] = t.split(':').map(Number)
+      const next = `${String(h + 1).padStart(2, '0')}:00`
+      result.push({ start: t, end: next })
+    }
+    return result
+  }
+  return slots
 }
 
 function getDayChildSchedule(child: Child | null, dayName: string) {
@@ -62,8 +74,10 @@ function getDayChildSchedule(child: Child | null, dayName: string) {
 function generateTimeSlots(slots: { start: string; end: string }[]) {
   const times: string[] = []
   for (const slot of slots) {
+    if (!slot?.start || !slot?.end) continue
     const [sh, sm] = slot.start.split(':').map(Number)
     const [eh, em] = slot.end.split(':').map(Number)
+    if (isNaN(sh) || isNaN(eh)) continue
     let h = sh
     while (h < eh || (h === eh && 0 < em)) {
       times.push(`${String(h).padStart(2, '0')}:00`)
@@ -86,6 +100,7 @@ export default function BookingPage() {
   const [children, setChildren] = useState<Child[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [existingBookings, setExistingBookings] = useState<{ date: string; time: string }[]>([])
 
   const [selectedChildId, setSelectedChildId] = useState(preselectedChild?.id ?? '')
   const [selectedDates, setSelectedDates] = useState<string[]>([])
@@ -114,9 +129,14 @@ export default function BookingPage() {
     Promise.all([
       teacherService.getById(teacherId),
       childService.getByParentId(user.id),
-    ]).then(([t, c]) => {
+      bookingService.getByTeacherId(teacherId),
+    ]).then(([t, c, bookings]) => {
       setTeacher(t as unknown as Teacher)
       setChildren(c as unknown as Child[])
+      setExistingBookings((bookings as any[])
+        .filter(b => b.status === 'confirmed' || b.status === 'completed')
+        .map(b => ({ date: b.date, time: b.time }))
+      )
       setLoading(false)
     })
   }, [teacherId])
@@ -371,13 +391,7 @@ export default function BookingPage() {
                       return <div key={`e-${i}`} />
                     const dateStr = `${viewingYear}-${String(viewingMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                     const dayName = dayNameFromDate(day)
-                    const teacherSlots = getDayAvailability(teacher!, dayName)
-                    const childSlots = getDayChildSchedule(selectedChild ?? null, dayName)
-                    const teacherHasAny = teacher!.availability && teacher!.availability.length > 0
-                    const childHasAny = selectedChild?.schedule && selectedChild.schedule.length > 0
-                    const teacherOk = !teacherHasAny || teacherSlots.length > 0
-                    const childOk = !childHasAny || childSlots.length > 0
-                    const selectable = isDateSelectable(dateStr) && teacherOk && childOk
+                    const selectable = isDateSelectable(dateStr)
                     const isSelected = selectedDates.includes(dateStr)
                     const hasSession = datesWithSessions.has(dateStr)
                     return (
@@ -438,7 +452,11 @@ export default function BookingPage() {
                       } else {
                         slots = teacherDaySlots.filter(t => childDaySlots.includes(t))
                       }
-                      return slots.map((time) => {
+                      const bookedTimes = existingBookings.filter(b => b.date === activeDate).map(b => b.time)
+                      const availableSlots = slots.filter(t => !bookedTimes.includes(t))
+                      return availableSlots.length === 0 ? (
+                        <p className="text-xs text-gray-400 py-2">No available time slots for this date.</p>
+                      ) : availableSlots.map((time) => {
                         const alreadyAdded = sessions.some((s) => s.date === activeDate && s.time === time)
                         return (
                           <button
@@ -653,6 +671,16 @@ export default function BookingPage() {
                       <p className="text-xs text-gray-500">{receipt.teacher.subjects.slice(0, 2).join(', ')}</p>
                     </div>
                   </div>
+
+                    <div className="border-b border-border pb-2">
+                      <p className="mb-2 text-xs font-semibold text-gray-500">Sessions</p>
+                      {receipt.sessions.map((s, i) => (
+                        <div key={i} className="flex items-center justify-between py-1 text-sm">
+                          <span>{new Date(s.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                          <span className="font-medium">{s.time} &middot; {s.duration}min</span>
+                        </div>
+                      ))}
+                    </div>
 
                     <div className="flex justify-between">
                       <span className="text-gray-500">Student</span>

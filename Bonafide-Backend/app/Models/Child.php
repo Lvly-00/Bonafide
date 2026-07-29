@@ -10,7 +10,7 @@ class Child extends Model
 {
     protected $fillable = [
         'parent_id', 'name', 'age', 'grade', 'avatar', 'learning_concerns',
-        'strengths', 'learning_style', 'interests', 'schedule',
+        'strengths', 'learning_style', 'interests',
         'profile_completed', 'teacher_id',
     ];
 
@@ -20,7 +20,6 @@ class Child extends Model
             'learning_concerns' => 'array',
             'strengths' => 'array',
             'interests' => 'array',
-            'schedule' => 'array',
             'profile_completed' => 'boolean',
         ];
     }

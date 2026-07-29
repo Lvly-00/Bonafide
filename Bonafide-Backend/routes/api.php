@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AIController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChildController;
 use App\Http\Controllers\Api\TeacherController;
@@ -48,11 +49,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/assessments/{childId}/submit', [AssessmentController::class, 'submit']);
     Route::post('/assessments/{childId}/progress', [AssessmentController::class, 'saveProgress']);
 
+    Route::post('/ai/suggestions', [AIController::class, 'suggestions']);
+
     Route::get('/conversations', [MessageController::class, 'conversations']);
     Route::get('/messages/{conversationId}', [MessageController::class, 'messages']);
     Route::post('/messages', [MessageController::class, 'send']);
 
     Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications', [NotificationController::class, 'store']);
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markRead']);
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllRead']);
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
