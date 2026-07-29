@@ -24,10 +24,8 @@ const AssessmentPage = lazy(() => import('@/pages/assessment/AssessmentPage'))
 const MatchingPage = lazy(() => import('@/pages/matching/MatchingPage'))
 const TeachersPage = lazy(() => import('@/pages/teachers/TeachersPage'))
 const TeacherProfilePage = lazy(() => import('@/pages/matching/TeacherProfilePage'))
-const BookingPage = lazy(() => import('@/pages/booking/BookingPage'))
 const MessagesPage = lazy(() => import('@/pages/messages/MessagesPage'))
 const NotificationsPage = lazy(() => import('@/pages/notifications/NotificationsPage'))
-const ProgressPage = lazy(() => import('@/pages/progress/ProgressPage'))
 const ReflectionPage = lazy(() => import('@/pages/reflection/ReflectionPage'))
 const FeedbackPage = lazy(() => import('@/pages/feedback/FeedbackPage'))
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'))
@@ -37,6 +35,7 @@ const TeacherCalendarPage = lazy(() => import('@/pages/teacher/TeacherCalendarPa
 const TeacherReportsPage = lazy(() => import('@/pages/teacher/TeacherReportsPage'))
 const TeacherStudentInfoPage = lazy(() => import('@/pages/teacher/TeacherStudentInfoPage'))
 const TeacherApprovalsPage = lazy(() => import('@/pages/teacher/TeacherApprovalsPage'))
+const BookingPage = lazy(() => import('@/pages/booking/BookingPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 
 function PageLoader() {
@@ -106,7 +105,6 @@ export default function App() {
                 <Route path={ROUTES.MESSAGES} element={<MessagesPage />} />
                 <Route path={ROUTES.MESSAGE_CONVERSATION} element={<MessagesPage />} />
                 <Route path={ROUTES.NOTIFICATIONS} element={<NotificationsPage />} />
-                <Route path={ROUTES.PROGRESS} element={<ProgressPage />} />
                 <Route path={ROUTES.REFLECTION} element={<ReflectionPage />} />
                 <Route path={ROUTES.TEACHER_SESSIONS} element={<TeacherSessionsPage />} />
                 <Route path={ROUTES.TEACHER_STUDENTS} element={<TeacherStudentsPage />} />

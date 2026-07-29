@@ -8,10 +8,8 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           <div className="col-span-2 md:col-span-1">
             <Link to="/" className="flex items-center gap-2.5 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-sm">
-                <span className="text-sm font-bold text-white">L</span>
-              </div>
-              <span className="text-lg font-bold text-gray-900">LearnLink</span>
+              <img src="/Bonafide.png" alt="Bonafide" className="h-8 w-8 rounded-lg shadow-sm object-cover" />
+              <span className="text-lg font-bold text-gray-900">Bonafide</span>
             </Link>
             <p className="text-sm text-gray-500 leading-relaxed max-w-xs">
               Connecting parents with the perfect teachers for their children's unique learning needs.
@@ -36,13 +34,13 @@ export function Footer() {
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-4">Contact</h3>
             <ul className="space-y-2.5">
-              <li><span className="text-sm text-gray-500">hello@learnlink.ai</span></li>
-              <li><span className="text-sm text-gray-500">1-800-LEARN</span></li>
+              <li><span className="text-sm text-gray-500">hello@bonafide.ai</span></li>
+              <li><span className="text-sm text-gray-500">1-800-BONAFIDE</span></li>
             </ul>
           </div>
         </div>
         <div className="mt-10 pt-6 border-t border-border">
-          <p className="text-center text-xs text-gray-400">&copy; 2026 LearnLink AI. All rights reserved.</p>
+          <p className="text-center text-xs text-gray-400">&copy; 2026 Bonafide. All rights reserved.</p>
         </div>
       </div>
     </footer>

@@ -1,5 +1,6 @@
 import api from './api'
 import type { Assessment, AssessmentAnswer } from '@/types'
+import type { ParentTeacherAssessment, ParentTeacherAssessmentAnswer, ParentTeacherAssessmentQuestion } from '@/types'
 
 export const assessmentService = {
   async getByChildId(childId: string): Promise<Assessment | null> {

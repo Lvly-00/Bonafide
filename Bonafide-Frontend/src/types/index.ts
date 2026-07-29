@@ -177,6 +177,7 @@ export interface Assessment {
 
 export interface AssessmentAnswer {
   questionId: number
+  text?: string
   answer: string | number
 }
 
@@ -193,6 +194,29 @@ export interface AssessmentResult {
     category: string
     score: number
   }[]
+}
+
+export interface ParentTeacherAssessmentAnswer {
+  questionId: number
+  answer: string | number
+}
+
+export interface ParentTeacherAssessment {
+  id: string
+  studentId: string
+  type: 'parent' | 'teacher'
+  answers: ParentTeacherAssessmentAnswer[]
+  overallScore?: number
+  feedback?: string
+  submittedAt: string
+}
+
+export interface ParentTeacherAssessmentQuestion {
+  id: number
+  question: string
+  category: 'Child Progress' | 'Teacher Performance' | 'Overall Experience'
+  type: 'scale'
+  options: ['Never', 'Rarely', 'Sometimes', 'Often', 'Always']
 }
 
 export interface Review {

@@ -58,7 +58,7 @@ export default function LoginPage() {
               <LogIn className="h-6 w-6 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-            <CardDescription>Sign in to your LearnLink AI account</CardDescription>
+            <CardDescription>Sign in to your Bonafide account</CardDescription>
           </CardHeader>
           <CardContent className="pb-7">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

@@ -81,7 +81,7 @@ export default function LandingPage() {
               </span>
             </h1>
             <p className="mt-6 text-lg md:text-xl text-gray-500 max-w-2xl mx-auto">
-              LearnLink AI uses advanced artificial intelligence to match your child with
+              Bonafide uses advanced artificial intelligence to match your child with
               the ideal teacher based on learning style, personality, and academic needs.
             </p>
           </motion.div>
@@ -133,7 +133,7 @@ export default function LandingPage() {
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
           <SectionHeading
-            title="Why Choose LearnLink AI?"
+            title="Why Choose Bonafide?"
             subtitle="We combine cutting-edge AI with educational expertise to find your child's perfect match."
           />
           <motion.div
@@ -220,7 +220,7 @@ export default function LandingPage() {
             viewport={{ once: true, margin: '-60px' }}
           >
             {[
-              { name: 'Sarah Mitchell', role: 'Parent of a 9-year-old', quote: 'LearnLink AI matched my son with a teacher who finally understands his learning style. His confidence has soared!', stars: 5 },
+              { name: 'Sarah Mitchell', role: 'Parent of a 9-year-old', quote: 'Bonafide matched my son with a teacher who finally understands his learning style. His confidence has soared!', stars: 5 },
               { name: 'James Chen', role: 'Parent of a 12-year-old', quote: 'The AI assessment was scarily accurate. Within a week, our daughter was excited about learning again.', stars: 5 },
               { name: 'Amara Patel', role: 'Parent of a 7-year-old', quote: 'Flexible scheduling and progress tracking make this a game-changer for busy families. Highly recommend!', stars: 5 },
             ].map((t) => (
@@ -279,7 +279,7 @@ export default function LandingPage() {
         <div className="max-w-3xl mx-auto">
           <SectionHeading
             title="Frequently Asked Questions"
-            subtitle="Everything you need to know about LearnLink AI."
+            subtitle="Everything you need to know about Bonafide."
           />
           <div className="space-y-3">
             {[

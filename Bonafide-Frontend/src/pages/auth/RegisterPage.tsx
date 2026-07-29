@@ -63,7 +63,7 @@ export default function RegisterPage() {
             <UserPlus className="h-6 w-6 text-white" />
           </div>
           <CardTitle className="text-2xl">Create an account</CardTitle>
-          <CardDescription>Join LearnLink AI as a parent or teacher</CardDescription>
+          <CardDescription>Join Bonafide as a parent or teacher</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

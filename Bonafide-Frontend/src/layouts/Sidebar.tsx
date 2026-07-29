@@ -13,8 +13,6 @@ const parentNavItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: ROUTES.PARENT_DASHBOARD },
   { icon: UserCircle, label: 'Child Profile', href: ROUTES.CHILD_PROFILE },
   { icon: Search, label: 'Find Teachers', href: ROUTES.MATCHING },
-  { icon: BookOpen, label: 'Bookings', href: ROUTES.PARENT_DASHBOARD },
-  { icon: TrendingUp, label: 'Progress', href: ROUTES.PROGRESS },
 ]
 
 const teacherNavItems = [
@@ -22,7 +20,6 @@ const teacherNavItems = [
   { icon: Users, label: 'My Students', href: ROUTES.TEACHER_STUDENTS },
   { icon: BookOpen, label: 'Sessions', href: ROUTES.TEACHER_SESSIONS },
   { icon: ClipboardCheck, label: 'Approvals', href: ROUTES.TEACHER_APPROVALS },
-  { icon: FileText, label: 'Reflections', href: ROUTES.TEACHER_REFLECTION },
 ]
 
 const adminNavItems = [

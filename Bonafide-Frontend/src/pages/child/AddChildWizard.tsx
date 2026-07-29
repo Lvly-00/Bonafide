@@ -16,6 +16,7 @@ import {
   DollarSign,
   ArrowRight,
   Loader2,
+  Calendar,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -108,10 +109,27 @@ export default function AddChildWizard() {
     }
   }
 
-  const handleSelectTeacher = async (teacherId: string) => {
+  const handleSelectTeacher = (teacherId: string) => {
     if (!newChildId) return
-    await childService.update(newChildId, { teacherId })
-    navigate(ROUTES.PARENT_DASHBOARD)
+    // Build a complete Child-shaped object from the wizard form for preselection in BookingPage
+    const childObj = {
+      id: newChildId,
+      parentId: '',
+      name: form.name,
+      age: Number(form.age),
+      grade: form.grade,
+      avatar: form.avatar,
+      learningConcerns: form.learningConcerns,
+      strengths: form.strengths,
+      learningStyle: form.learningStyle.join(', '),
+      interests: form.interests,
+      schedule: [],
+      profileCompleted: true,
+    }
+    navigate(
+      ROUTES.BOOKING.replace(':teacherId', teacherId),
+      { state: { preselectedChild: childObj } }
+    )
   }
 
   const handleSkip = () => {
@@ -438,7 +456,7 @@ export default function AddChildWizard() {
                             )}
                             <div className="mt-4 flex gap-3">
                               <Button size="sm" onClick={() => handleSelectTeacher(newChildTeachers[0].teacherId)}>
-                                <Check className="mr-1 h-4 w-4" /> Select This Teacher
+                                <Calendar className="mr-1 h-4 w-4" /> Book Session
                               </Button>
                               <Button variant="outline" size="sm" onClick={handleBrowseAll}>
                                 Browse All
@@ -486,7 +504,7 @@ export default function AddChildWizard() {
                                   className="mt-3 w-full"
                                   onClick={() => handleSelectTeacher(teacher.teacherId)}
                                 >
-                                  Select
+                                  Book Session
                                 </Button>
                               </CardContent>
                             </Card>

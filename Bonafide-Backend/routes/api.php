@@ -42,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::patch('/bookings/{id}/status', [BookingController::class, 'updateStatus']);
     Route::post('/bookings/{id}/feedback', [BookingController::class, 'submitFeedback']);
+    Route::get('/bookings/session-assessments/{childId}', [BookingController::class, 'sessionAssessments']);
     Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
 
     Route::get('/assessments/{childId}', [AssessmentController::class, 'show']);

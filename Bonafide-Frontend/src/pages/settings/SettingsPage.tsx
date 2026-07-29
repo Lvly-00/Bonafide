@@ -353,7 +353,7 @@ export default function SettingsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-6"
           >
-            <p className="text-sm text-gray-500">Choose how LearnLink AI looks for you</p>
+            <p className="text-sm text-gray-500">Choose how Bonafide looks for you</p>
             <div className="grid gap-4 sm:grid-cols-3">
               {[
                 { id: 'light' as const, label: 'Light', icon: Sun, desc: 'Light mode' },

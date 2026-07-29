@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Brain, Calendar, Clock } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
+import { ArrowLeft, Brain, Calendar, Clock, BarChart3, Target, Lightbulb, ThumbsUp, TrendingUp, AlertTriangle, Star } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { bookingService, assessmentService } from '@/services'
 import { useAuthStore } from '@/stores/authStore'
 import type { Assessment, Booking } from '@/types'
+import parentTeacherAssessmentQuestions from '@/data/parentTeacherAssessments'
 
 export default function TeacherStudentInfoPage() {
   const { id } = useParams<{ id: string }>()
@@ -17,7 +18,9 @@ export default function TeacherStudentInfoPage() {
   const user = useAuthStore((s) => s.user)
   const [student, setStudent] = useState<any>(null)
   const [assessment, setAssessment] = useState<Assessment | null>(null)
+  const [sessionAssessments, setSessionAssessments] = useState<any[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [parentFeedback, setParentFeedback] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -25,10 +28,14 @@ export default function TeacherStudentInfoPage() {
     Promise.all([
       bookingService.getByTeacherId(user.id),
       assessmentService.getByChildId(id),
-    ]).then(([bks, asm]) => {
+      bookingService.getSessionAssessments(id),
+      bookingService.getParentFeedbackByChildId(id),
+    ]).then(([bks, asm, sas, feedback]) => {
       const childBks = bks.filter((b: Booking) => b.childId === id)
       setBookings(childBks)
       setAssessment(asm)
+      setSessionAssessments(sas)
+      setParentFeedback(feedback)
       if (childBks.length > 0) {
         const total = childBks.filter((b) => b.status === 'confirmed' || b.status === 'completed').length
         const completed = childBks.filter((b) => b.status === 'completed').length
@@ -39,6 +46,7 @@ export default function TeacherStudentInfoPage() {
           progress,
           lastSession: childBks[childBks.length - 1]?.date || 'N/A',
           subject: childBks[0].sessionType,
+          feedbackAssessment: feedback?.assessment || null,
         })
       } else {
         setStudent(null)
@@ -122,6 +130,145 @@ export default function TeacherStudentInfoPage() {
           )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardContent className="p-5">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-4">
+            <Star className="h-4 w-4 text-amber-500" />
+            Parent Assessment
+          </h2>
+          {student?.feedbackAssessment ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-700">Overall Rating</p>
+                  <p className="text-xs text-gray-500">Submitted {new Date(student.feedbackAssessment.submittedAt).toLocaleDateString()}</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`h-4 w-4 ${i < Math.ceil(student.feedbackAssessment.overallScore / 20) ? 'fill-amber-500 text-amber-500' : 'text-gray-200'}`}
+                    />
+                  ))}
+                  <span className="text-sm font-semibold ml-2">{Math.round(student.feedbackAssessment.overallScore)}/5</span>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {parentTeacherAssessmentQuestions.map((q) => {
+                  const answer = student.feedbackAssessment.answers.find((a) => a.questionId === q.id)
+                  if (!answer) return null
+                  const score = typeof answer.answer === 'number' ? answer.answer : parseInt(answer.answer) || 0
+                  const scoreMap = { Never: 1, Rarely: 2, Sometimes: 3, Often: 4, Always: 5 }
+                  const displayScore = scoreMap[answer.answer as keyof typeof scoreMap] || score
+                  return (
+                    <div key={q.id} className="flex items-center justify-between py-2 border-b border-gray-100">
+                      <div className="flex-1">
+                        <p className="text-xs font-medium text-gray-600">{q.question}</p>
+                        <p className="text-xs text-gray-400 capitalize">{q.category}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-3 w-3 ${i < displayScore ? 'fill-amber-400 text-amber-400' : 'text-gray-200'}`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs font-semibold w-8 text-right">{displayScore}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="text-xs text-gray-400 py-4 text-center">No parent assessment completed yet</div>
+          )}
+        </CardContent>
+      </Card>
+
+      {sessionAssessments.length > 0 && (
+        <Card>
+          <CardContent className="p-5">
+            <h2 className="flex items-center gap-1.5 text-sm font-semibold text-gray-700 mb-4">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              Session Survey AI Assessments
+            </h2>
+            <div className="space-y-4">
+              {sessionAssessments.map((sa) => (
+                <div key={sa.bookingId} className="rounded-lg border border-border p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{sa.subject}</p>
+                      <p className="text-xs text-gray-500">{sa.date} &middot; {sa.teacherName}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">Effectiveness</span>
+                      <span className="text-lg font-bold text-primary">{sa.aiAssessment.overallEffectiveness}%</span>
+                    </div>
+                  </div>
+                  <p className="mb-3 text-xs text-gray-600 leading-relaxed">{sa.aiAssessment.sessionSummary}</p>
+                  <div className="mb-3 grid grid-cols-2 gap-2">
+                    <div className="rounded-lg bg-green-50 p-2.5">
+                      <div className="flex items-center gap-1 text-xs font-medium text-green-700">
+                        <ThumbsUp className="h-3 w-3" /> Parent Engagement
+                      </div>
+                      <p className="mt-1 text-lg font-bold text-green-600">{sa.aiAssessment.parentEngagementScore}%</p>
+                    </div>
+                    <div className="rounded-lg bg-blue-50 p-2.5">
+                      <div className="flex items-center gap-1 text-xs font-medium text-blue-700">
+                        <TrendingUp className="h-3 w-3" /> Teacher Engagement
+                      </div>
+                      <p className="mt-1 text-lg font-bold text-blue-600">{sa.aiAssessment.teacherEngagementScore}%</p>
+                    </div>
+                  </div>
+                  <div className="mb-3 flex items-center gap-2 text-xs">
+                    <span className="text-gray-500">Alignment:</span>
+                    <div className="h-2 w-24 overflow-hidden rounded-full bg-gray-100">
+                      <div className="h-full rounded-full bg-purple-500" style={{ width: `${sa.aiAssessment.alignmentScore}%` }} />
+                    </div>
+                    <span className="font-semibold text-purple-600">{sa.aiAssessment.alignmentScore}%</span>
+                  </div>
+                  <div className="mb-2">
+                    <p className="mb-1 text-xs font-medium text-gray-500">Child Progress Insight</p>
+                    <p className="text-xs text-gray-600">{sa.aiAssessment.childProgressInsight}</p>
+                  </div>
+                  <div className="mb-2">
+                    <p className="mb-1 text-xs font-medium text-gray-500">Teaching Quality Insight</p>
+                    <p className="text-xs text-gray-600">{sa.aiAssessment.teachingQualityInsight}</p>
+                  </div>
+                  <div className="mb-2">
+                    <p className="mb-1 text-xs font-medium text-gray-500">Strengths</p>
+                    <div className="flex flex-wrap gap-1">
+                      {sa.aiAssessment.strengthsObserved?.map((s: string, i: number) => (
+                        <span key={i} className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700">{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mb-2">
+                    <p className="mb-1 text-xs font-medium text-gray-500">Areas to Improve</p>
+                    <div className="flex flex-wrap gap-1">
+                      {sa.aiAssessment.areasToImprove?.map((a: string, i: number) => (
+                        <span key={i} className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-700">{a}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-1 text-xs font-medium text-gray-500">Recommendations</p>
+                    <div className="flex flex-wrap gap-1">
+                      {sa.aiAssessment.recommendations?.map((r: string, i: number) => (
+                        <span key={i} className="rounded-full bg-primary-light/40 px-2.5 py-0.5 text-xs font-medium text-primary">{r}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="p-5">

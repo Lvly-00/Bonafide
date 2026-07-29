@@ -146,6 +146,59 @@ class GroqService
         return $this->chat($prompt);
     }
 
+    public function analyzeSessionSurvey(array $parentSurvey, array $teacherSurvey, array $childInfo, array $sessionInfo): array
+    {
+        $parentText = collect($parentSurvey)->map(fn ($a) =>
+            "Q{$a['questionId']}: " . ($a['text'] ?? '') . " -> " . ($a['answer'] ?? '') . "/5"
+        )->implode("\n");
+
+        $teacherText = collect($teacherSurvey)->map(fn ($a) =>
+            "Q{$a['questionId']}: " . ($a['text'] ?? '') . " -> " . ($a['answer'] ?? '') . "/5"
+        )->implode("\n");
+
+        $interests = implode(', ', $childInfo['interests'] ?? []);
+        $concerns = implode(', ', $childInfo['learning_concerns'] ?? []);
+
+        $prompt = "You are an AI session analyst. Analyze the combined parent and teacher session survey feedback and generate insights.\n\n"
+            . "Child Profile:\n"
+            . "- Name: {$childInfo['name']}\n"
+            . "- Age: {$childInfo['age']}\n"
+            . "- Grade: {$childInfo['grade']}\n"
+            . "- Interests: {$interests}\n"
+            . "- Learning Concerns: {$concerns}\n\n"
+            . "Session Info:\n"
+            . "- Subject: {$sessionInfo['subject']}\n"
+            . "- Date: {$sessionInfo['date']}\n"
+            . "- Duration: {$sessionInfo['duration']} minutes\n\n"
+            . "Parent Survey Answers (1-5 scale):\n{$parentText}\n\n"
+            . "Teacher Survey Answers (1-5 scale):\n{$teacherText}\n\n"
+            . "Return a JSON object (no markdown, no code fences) with this exact structure:\n"
+            . "{\n"
+            . '  "overallEffectiveness": <0-100 integer score for overall session effectiveness>,'
+            . "\n"
+            . '  "sessionSummary": "A 2-3 sentence summary of the session quality from both perspectives",'
+            . "\n"
+            . '  "childProgressInsight": "A 1-2 sentence insight about the child\'s progress based on both surveys",'
+            . "\n"
+            . '  "teachingQualityInsight": "A 1-2 sentence insight about teaching effectiveness from parent feedback",'
+            . "\n"
+            . '  "alignmentScore": <0-100 integer score showing how well parent and teacher perceptions align>,'
+            . "\n"
+            . '  "parentEngagementScore": <0-100 integer based on parent survey child progress answers>,'
+            . "\n"
+            . '  "teacherEngagementScore": <0-100 integer based on teacher survey engagement answers>,'
+            . "\n"
+            . '  "recommendations": ["Array of 3-5 actionable recommendations for future sessions"],'
+            . "\n"
+            . '  "strengthsObserved": ["Array of 2-3 strengths observed during the session"],'
+            . "\n"
+            . '  "areasToImprove": ["Array of 2-3 areas to focus on in future sessions"]'
+            . "\n"
+            . "}";
+
+        return $this->chat($prompt);
+    }
+
     public function generateSuggestions(array $context): array
     {
         $prompt = "You are an AI teaching assistant. Based on the following session context, generate 3-5 specific, actionable suggestions for the teacher.\n\n"

@@ -161,7 +161,7 @@ export const mockUsers = [
   },
   {
     id: 'admin-1',
-    email: 'admin@learnlink.com',
+    email: 'admin@bonafide.com',
     name: 'Michael Adams',
     role: 'admin' as const,
     avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=michael',

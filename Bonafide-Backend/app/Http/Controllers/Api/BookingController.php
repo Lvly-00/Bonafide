@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Booking;
+use App\Models\Child;
 use App\Models\Progress;
 use App\Models\Review;
+use App\Services\GroqService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -147,6 +149,37 @@ class BookingController extends ApiController
         ];
         $booking->update(['feedback' => $feedback]);
 
+        // If both parent and teacher have submitted, trigger AI analysis
+        $feedback = $booking->fresh()->feedback ?? [];
+        if (!empty($feedback['parent'] ?? []) && !empty($feedback['teacher'] ?? [])) {
+            try {
+                $groq = app(GroqService::class);
+                $child = $booking->child;
+                $parentAnswers = $feedback['parent']['answers'] ?? [];
+                $teacherAnswers = $feedback['teacher']['answers'] ?? [];
+                $sessionInfo = [
+                    'subject' => $booking->session_type,
+                    'date' => $booking->date,
+                    'duration' => $booking->duration,
+                ];
+                $aiResult = $groq->analyzeSessionSurvey(
+                    $parentAnswers,
+                    $teacherAnswers,
+                    $child ? $child->toArray() : [],
+                    $sessionInfo
+                );
+                if (!empty($aiResult)) {
+                    $feedback['aiAssessment'] = $aiResult;
+                    $booking->update(['feedback' => $feedback]);
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning('AI session analysis failed', [
+                    'booking_id' => $booking->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         // Update teacher rating when parent submits feedback
         if ($request->role === 'parent') {
             $rating = $this->computeRatingFromAnswers($request->answers);
@@ -225,6 +258,28 @@ class BookingController extends ApiController
     {
         $values = array_column($answers, 'answer');
         return count($values) > 0 ? array_sum($values) / count($values) : 3;
+    }
+
+    public function sessionAssessments(int $childId): JsonResponse
+    {
+        $bookings = Booking::with(['child', 'teacher'])
+            ->where('child_id', $childId)
+            ->whereNotNull('feedback')
+            ->orderBy('date', 'desc')
+            ->get()
+            ->filter(fn ($b) => !empty($b->feedback['aiAssessment'] ?? []))
+            ->values()
+            ->map(fn ($b) => [
+                'bookingId' => (string) $b->id,
+                'date' => $b->date,
+                'subject' => $b->session_type,
+                'teacherName' => $b->teacher?->name ?? 'Unknown',
+                'aiAssessment' => $b->feedback['aiAssessment'],
+                'parentSubmitted' => !empty($b->feedback['parent'] ?? []),
+                'teacherSubmitted' => !empty($b->feedback['teacher'] ?? []),
+            ]);
+
+        return response()->json($bookings);
     }
 
     public function destroy(int $id): JsonResponse

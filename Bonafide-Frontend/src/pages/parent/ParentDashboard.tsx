@@ -65,6 +65,7 @@ export default function ParentDashboard() {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [bookings, setBookings] = useState<any[]>([])
+  const [sessionAssessments, setSessionAssessments] = useState<any[]>([])
   const [feedbackBookingId, setFeedbackBookingId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -73,7 +74,15 @@ export default function ParentDashboard() {
       setData(res)
       setLoading(false)
     })
-    bookingService.getByParentId(user.id).then((res) => setBookings(res))
+    bookingService.getByParentId(user.id).then((res) => {
+      setBookings(res)
+      const childIds = [...new Set(res.map((b) => b.childId))]
+      if (childIds.length > 0) {
+        Promise.all(childIds.map((cid) => bookingService.getSessionAssessments(cid))).then((results) => {
+          setSessionAssessments(results.flat())
+        })
+      }
+    })
   }, [])
 
   if (loading) {
@@ -229,6 +238,43 @@ export default function ParentDashboard() {
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {sessionAssessments.length > 0 && (
+        <motion.div variants={itemVariants}>
+          <Card className="overflow-hidden border-0 shadow-md shadow-gray-200/50">
+            <div className="h-1 bg-gradient-to-r from-teal-400 via-cyan-500 to-teal-500" />
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">AI Session Insights</CardTitle>
+              <Brain className="h-4 w-4 text-gray-400" />
+            </CardHeader>
+            <CardContent className="space-y-4 p-5">
+              {sessionAssessments.map((sa) => (
+                <div key={sa.bookingId} className="rounded-lg border border-border p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{sa.subject} &middot; {sa.date}</p>
+                      <p className="text-xs text-gray-500">{sa.teacherName}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">Score</span>
+                      <span className="text-lg font-bold text-primary">{sa.aiAssessment.overallEffectiveness}%</span>
+                    </div>
+                  </div>
+                  <p className="mb-2 text-xs text-gray-600">{sa.aiAssessment.sessionSummary}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {sa.aiAssessment.strengthsObserved?.slice(0, 2).map((s: string, i: number) => (
+                      <span key={i} className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">{s}</span>
+                    ))}
+                    {sa.aiAssessment.recommendations?.slice(0, 2).map((r: string, i: number) => (
+                      <span key={i} className="rounded-full bg-primary-light/40 px-2 py-0.5 text-xs font-medium text-primary">{r}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </motion.div>

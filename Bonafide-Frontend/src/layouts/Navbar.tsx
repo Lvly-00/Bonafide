@@ -43,10 +43,8 @@ export function Navbar() {
             <Menu className="h-5 w-5" />
           </button>
           <Link to={user ? roleDashboard : ROUTES.HOME} className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-sm">
-              <span className="text-sm font-bold text-white">L</span>
-            </div>
-            <span className="text-lg font-bold text-gray-900 hidden sm:block">LearnLink</span>
+            <img src="/Bonafide.png" alt="Bonafide" className="h-8 w-8 rounded-lg shadow-sm object-cover" />
+            <span className="text-lg font-bold text-gray-900 hidden sm:block">Bonafide</span>
           </Link>
         </div>
 

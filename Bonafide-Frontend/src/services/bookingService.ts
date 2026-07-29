@@ -1,5 +1,6 @@
 import api from './api'
-import type { Booking, AssessmentAnswer } from '@/types'
+import type { Booking, AssessmentAnswer, AssessmentResult } from '@/types'
+import type { ParentTeacherAssessment } from '@/types'
 
 export const bookingService = {
   async getAll(): Promise<Booking[]> {
@@ -37,5 +38,28 @@ export const bookingService = {
 
   async submitFeedback(id: string, role: 'parent' | 'teacher', answers: AssessmentAnswer[]): Promise<void> {
     await api.post(`/bookings/${id}/feedback`, { role, answers })
+  },
+
+  async getSessionAssessments(childId: string): Promise<any[]> {
+    const { data } = await api.get(`/bookings/session-assessments/${childId}`)
+    return data
+  },
+
+  async submitParentFeedback(bookingId: string, answers: any[]): Promise<void> {
+    await api.post(`/bookings/${bookingId}/parent-feedback`, { answers })
+  },
+
+  async submitTeacherAssessment(bookingId: string, answers: any[]): Promise<void> {
+    await api.post(`/bookings/${bookingId}/teacher-assessment`, { answers })
+  },
+
+  async getParentFeedback(bookingId: string): Promise<any | null> {
+    const { data } = await api.get(`/bookings/${bookingId}/parent-feedback`)
+    return data
+  },
+
+  async getTeacherAssessment(bookingId: string): Promise<any | null> {
+    const { data } = await api.get(`/bookings/${bookingId}/teacher-assessment`)
+    return data
   },
 }

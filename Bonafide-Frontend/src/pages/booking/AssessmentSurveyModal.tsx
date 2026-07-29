@@ -94,10 +94,14 @@ export default function AssessmentSurveyModal({ bookingId, role, onClose }: Asse
 
   const handleSubmit = async () => {
     setSubmitting(true)
-    const payload: AssessmentAnswer[] = Object.entries(answers).map(([questionId, answer]) => ({
-      questionId: Number(questionId),
-      answer,
-    }))
+    const payload = Object.entries(answers).map(([questionId, answer]) => {
+      const q = allQuestions.find((q) => q.id === Number(questionId))
+      return {
+        questionId: Number(questionId),
+        text: q?.text ?? '',
+        answer,
+      }
+    })
     try {
       await bookingService.submitFeedback(bookingId, role, payload)
     } catch { /* ignore */ }
