@@ -17,6 +17,11 @@ import {
   Brain,
   Loader2,
   Calendar,
+  GraduationCap,
+  Star,
+  Briefcase,
+  DollarSign,
+  ArrowRight,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -32,7 +37,7 @@ import {
   GRADES,
   ROUTES,
 } from '@/constants'
-import type { Child } from '@/types'
+import type { Child, MatchResult } from '@/types'
 
 interface ChildForm {
   name: string
@@ -73,7 +78,7 @@ export default function ChildProfilePage() {
   const [submitting, setSubmitting] = useState(false)
   const [loadingRecommendations, setLoadingRecommendations] = useState(false)
   const [newChildId, setNewChildId] = useState<string | null>(null)
-  const [newChildTeachers, setNewChildTeachers] = useState<any[]>([])
+  const [newChildTeachers, setNewChildTeachers] = useState<MatchResult[]>([])
 
   useEffect(() => {
     if (!user?.id) return
