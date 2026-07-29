@@ -11,6 +11,7 @@ export const ROUTES = {
   CHILD_PROFILE: '/parent/child-profile',
   CHILD_PROFILE_EDIT: '/parent/child-profile/:id',
   CHILD_PROFILE_NEW: '/parent/child-profile/new',
+  CHILD_DETAIL: '/parent/child/:id',
   ASSESSMENT: '/parent/assessment',
   ASSESSMENT_RESULT: '/parent/assessment/:id/result',
   MATCHING: '/parent/matching',

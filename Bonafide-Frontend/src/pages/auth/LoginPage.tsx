@@ -54,9 +54,7 @@ export default function LoginPage() {
         <Card className="overflow-hidden border-0 shadow-xl shadow-gray-200/50">
           <div className="h-1.5 bg-gradient-to-r from-primary via-blue-500 to-blue-400" />
           <CardHeader className="text-center pb-4 pt-7">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-600 shadow-lg shadow-primary/20">
-              <LogIn className="h-6 w-6 text-white" />
-            </div>
+         
             <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
             <CardDescription>Sign in to your Bonafide account</CardDescription>
           </CardHeader>

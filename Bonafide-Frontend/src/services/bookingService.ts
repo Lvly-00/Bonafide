@@ -62,4 +62,13 @@ export const bookingService = {
     const { data } = await api.get(`/bookings/${bookingId}/teacher-assessment`)
     return data
   },
+
+  async getParentFeedbackByChildId(childId: string): Promise<any | null> {
+    try {
+      const { data } = await api.get(`/bookings/parent-feedback/${childId}`)
+      return data
+    } catch {
+      return null
+    }
+  },
 }

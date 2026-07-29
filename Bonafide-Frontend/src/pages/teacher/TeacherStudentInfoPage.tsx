@@ -31,22 +31,35 @@ export default function TeacherStudentInfoPage() {
       bookingService.getSessionAssessments(id),
       bookingService.getParentFeedbackByChildId(id),
     ]).then(([bks, asm, sas, feedback]) => {
-      const childBks = bks.filter((b: Booking) => b.childId === id)
+      const childBks = (bks as Booking[]).filter((b: Booking) => b.childId === id)
       setBookings(childBks)
       setAssessment(asm)
       setSessionAssessments(sas)
       setParentFeedback(feedback)
       if (childBks.length > 0) {
-        const total = childBks.filter((b) => b.status === 'confirmed' || b.status === 'completed').length
-        const completed = childBks.filter((b) => b.status === 'completed').length
+        const total = childBks.filter((b: Booking) => b.status === 'confirmed' || b.status === 'completed').length
+        const completed = childBks.filter((b: Booking) => b.status === 'completed').length
         const progress = total > 0 ? Math.round((completed / total) * 100) : 0
+        // Build feedbackAssessment from parent feedback answers
+        let feedbackAssessment = null
+        if (feedback?.answers?.length > 0) {
+          const scores = (feedback.answers as { questionId: number; answer: number | string }[])
+            .map((a) => (typeof a.answer === 'number' ? a.answer : Number(a.answer) || 0))
+            .filter((v) => v >= 1 && v <= 5)
+          const avg = scores.length > 0 ? scores.reduce((s: number, v: number) => s + v, 0) / scores.length : 0
+          feedbackAssessment = {
+            answers: feedback.answers,
+            submittedAt: feedback.submittedAt,
+            overallScore: avg, // 0–5 scale
+          }
+        }
         setStudent({
           id,
           name: childBks[0].childName,
           progress,
           lastSession: childBks[childBks.length - 1]?.date || 'N/A',
           subject: childBks[0].sessionType,
-          feedbackAssessment: feedback?.assessment || null,
+          feedbackAssessment,
         })
       } else {
         setStudent(null)
@@ -148,15 +161,15 @@ export default function TeacherStudentInfoPage() {
                   {[...Array(5)].map((_, i) => (
                     <Star
                       key={i}
-                      className={`h-4 w-4 ${i < Math.ceil(student.feedbackAssessment.overallScore / 20) ? 'fill-amber-500 text-amber-500' : 'text-gray-200'}`}
+                      className={`h-4 w-4 ${i < Math.round(student.feedbackAssessment.overallScore) ? 'fill-amber-500 text-amber-500' : 'text-gray-200'}`}
                     />
                   ))}
-                  <span className="text-sm font-semibold ml-2">{Math.round(student.feedbackAssessment.overallScore)}/5</span>
+                  <span className="text-sm font-semibold ml-2">{student.feedbackAssessment.overallScore.toFixed(1)} / 5</span>
                 </div>
               </div>
               <div className="space-y-2">
                 {parentTeacherAssessmentQuestions.map((q) => {
-                  const answer = student.feedbackAssessment.answers.find((a) => a.questionId === q.id)
+                  const answer = student.feedbackAssessment.answers.find((a: { questionId: number; answer: number | string }) => a.questionId === q.id)
                   if (!answer) return null
                   const score = typeof answer.answer === 'number' ? answer.answer : parseInt(answer.answer) || 0
                   const scoreMap = { Never: 1, Rarely: 2, Sometimes: 3, Often: 4, Always: 5 }

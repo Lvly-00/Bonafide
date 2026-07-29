@@ -12,6 +12,7 @@ import { bookingService, notificationService } from '@/services'
 import { useAuthStore } from '@/stores/authStore'
 import { ROUTES } from '@/constants'
 import type { Booking } from '@/types'
+import AssessmentSurveyModal from '@/pages/booking/AssessmentSurveyModal'
 
 interface StudentWithBookings {
   id: string
@@ -31,6 +32,7 @@ export default function TeacherStudentsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [completing, setCompleting] = useState<string | null>(null)
+  const [surveyBooking, setSurveyBooking] = useState<Booking | null>(null)
 
   const fetchData = () => {
     if (!user?.id) return
@@ -58,15 +60,23 @@ export default function TeacherStudentsPage() {
   const handleMarkDone = async (booking: Booking) => {
     setCompleting(booking.id)
     await bookingService.updateStatus(booking.id, 'completed')
+    setCompleting(null)
+    fetchData()
+    // Open teacher's own assessment survey immediately
+    setSurveyBooking(booking)
+  }
+
+  const handleSurveyClose = async () => {
+    if (!surveyBooking) return
+    // Notify parent to fill their assessment after teacher closes their survey
     await notificationService.create({
-      userId: booking.parentId,
+      userId: surveyBooking.parentId,
       title: 'Session Completed',
-      message: `Session with ${booking.childName} on ${booking.date} has been completed. Please take the assessment survey.`,
+      message: `Session with ${surveyBooking.childName} on ${surveyBooking.date} has been completed. Please take the assessment survey.`,
       type: 'booking',
       link: '/parent/feedback',
     })
-    setCompleting(null)
-    fetchData()
+    setSurveyBooking(null)
   }
 
   const filtered = students.filter((s) =>
@@ -188,6 +198,15 @@ export default function TeacherStudentsPage() {
 
       {filtered.length === 0 && (
         <p className="py-16 text-center text-sm text-gray-400">No students found.</p>
+      )}
+
+      {/* Teacher assessment survey — opens immediately after marking a session done */}
+      {surveyBooking && (
+        <AssessmentSurveyModal
+          bookingId={surveyBooking.id}
+          role="teacher"
+          onClose={handleSurveyClose}
+        />
       )}
     </motion.div>
   )

@@ -13,15 +13,9 @@ import {
   Upload,
   Pencil,
   Trash2,
-  Search,
   BookOpen,
   Brain,
-  Star,
   Loader2,
-  GraduationCap,
-  Briefcase,
-  DollarSign,
-  ArrowRight,
   Calendar,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -38,7 +32,7 @@ import {
   GRADES,
   ROUTES,
 } from '@/constants'
-import type { Child, MatchResult } from '@/types'
+import type { Child } from '@/types'
 
 interface ChildForm {
   name: string
@@ -76,28 +70,15 @@ export default function ChildProfilePage() {
   const [step, setStep] = useState(1)
   const [direction, setDirection] = useState(1)
   const [form, setForm] = useState<ChildForm>(initialForm)
-  const [recommendedTeachers, setRecommendedTeachers] = useState<Record<string, MatchResult[]>>({})
-  const [loadingTeachers, setLoadingTeachers] = useState<Record<string, boolean>>({})
   const [submitting, setSubmitting] = useState(false)
   const [loadingRecommendations, setLoadingRecommendations] = useState(false)
   const [newChildId, setNewChildId] = useState<string | null>(null)
-  const [newChildTeachers, setNewChildTeachers] = useState<MatchResult[]>([])
+  const [newChildTeachers, setNewChildTeachers] = useState<any[]>([])
 
   useEffect(() => {
     if (!user?.id) return
     childService.getByParentId(user.id).then((data) => {
       setChildren(data)
-      // Fetch recommended teachers for each child
-      data.forEach((child) => {
-        setLoadingTeachers((prev) => ({ ...prev, [child.id]: true }))
-        childService.getRecommendedTeachers(child.id).then((teachers) => {
-          setRecommendedTeachers((prev) => ({ ...prev, [child.id]: teachers }))
-          setLoadingTeachers((prev) => ({ ...prev, [child.id]: false }))
-        }).catch(() => {
-          setRecommendedTeachers((prev) => ({ ...prev, [child.id]: [] }))
-          setLoadingTeachers((prev) => ({ ...prev, [child.id]: false }))
-        })
-      })
     })
   }, [user])
 
@@ -317,44 +298,14 @@ export default function ChildProfilePage() {
 
                   </div>
 
-                  {loadingTeachers[child.id] ? (
-                    <div className="flex items-center justify-center py-3">
-                      <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
-                    </div>
-                  ) : recommendedTeachers[child.id]?.length > 0 ? (
-                    <div>
-                      <p className="mb-2 text-[11px] font-medium text-gray-500">Recommended Teachers</p>
-                      <div className="flex gap-2 overflow-x-auto pb-1">
-                        {recommendedTeachers[child.id].slice(0, 4).map((teacher) => (
-                          <div
-                            key={teacher.teacherId}
-                            className="flex shrink-0 flex-col items-center gap-1 rounded-lg border bg-gray-50 p-2.5 text-center"
-                            style={{ minWidth: 120 }}
-                          >
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={teacher.avatar} alt={teacher.name} />
-                              <AvatarFallback className="text-xs">{teacher.name[0]}</AvatarFallback>
-                            </Avatar>
-                            <p className="max-w-[100px] truncate text-[10px] font-medium">{teacher.name}</p>
-                            <div className="flex items-center gap-0.5 text-[10px] text-amber-500">
-                              <Star className="h-3 w-3 fill-current" />
-                              <span>{teacher.rating.toFixed(1)}</span>
-                            </div>
-                            <p className="text-[10px] font-semibold text-green-600">${teacher.hourlyRate}/hr</p>
-                            <Button
-                              size="sm"
-                              className="mt-1 h-6 w-full gap-1 px-2 text-[10px]"
-                              onClick={() => navigate(`/parent/booking/${teacher.teacherId}`, { state: { preselectedChild: child } })}
-                            >
-                              Book Now
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-
                   <div className="mt-4 flex items-center gap-2 border-t border-border pt-4">
+                    <Button
+                      size="sm"
+                      className="flex-1 gap-1.5 text-xs"
+                      onClick={() => navigate(ROUTES.CHILD_DETAIL.replace(':id', child.id))}
+                    >
+                      <BookOpen className="h-3.5 w-3.5" /> View Details
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -362,14 +313,6 @@ export default function ChildProfilePage() {
                       onClick={(e) => handleEdit(child, e)}
                     >
                       <Pencil className="h-3.5 w-3.5" /> Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 gap-1.5 text-xs text-primary hover:text-primary"
-                      onClick={() => navigate(ROUTES.MATCHING)}
-                    >
-                      <Search className="h-3.5 w-3.5" /> Find Tutor
                     </Button>
                     <Button
                       variant="ghost"

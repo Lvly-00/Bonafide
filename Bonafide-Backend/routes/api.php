@@ -38,11 +38,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/favorites', [TeacherController::class, 'favorites']);
 
     Route::get('/bookings', [BookingController::class, 'index']);
+    Route::get('/bookings/parent-feedback/{childId}', [BookingController::class, 'parentFeedbackByChild']);
+    Route::get('/bookings/session-assessments/{childId}', [BookingController::class, 'sessionAssessments']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::patch('/bookings/{id}/status', [BookingController::class, 'updateStatus']);
     Route::post('/bookings/{id}/feedback', [BookingController::class, 'submitFeedback']);
-    Route::get('/bookings/session-assessments/{childId}', [BookingController::class, 'sessionAssessments']);
     Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
 
     Route::get('/assessments/{childId}', [AssessmentController::class, 'show']);

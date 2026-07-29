@@ -282,6 +282,37 @@ class BookingController extends ApiController
         return response()->json($bookings);
     }
 
+    public function parentFeedbackByChild(int $childId): JsonResponse
+    {
+        // Find the most recent completed booking for this child that has parent feedback
+        $booking = Booking::where('child_id', $childId)
+            ->whereNotNull('feedback')
+            ->orderBy('date', 'desc')
+            ->get()
+            ->first(fn ($b) => !empty($b->feedback['parent']['answers'] ?? []));
+
+        if (!$booking) {
+            return response()->json(null);
+        }
+
+        $parentFeedback = $booking->feedback['parent'];
+        $answers = $parentFeedback['answers'] ?? [];
+
+        // Compute overall average on a 1–5 scale
+        $scores = array_filter(
+            array_map(fn ($a) => is_numeric($a['answer']) ? (float) $a['answer'] : 0, $answers),
+            fn ($v) => $v >= 1 && $v <= 5
+        );
+        $avg = count($scores) > 0 ? array_sum($scores) / count($scores) : 0;
+
+        return response()->json([
+            'bookingId' => (string) $booking->id,
+            'answers' => $answers,
+            'submittedAt' => $parentFeedback['submittedAt'] ?? null,
+            'overallAverage' => round($avg, 2),
+        ]);
+    }
+
     public function destroy(int $id): JsonResponse
     {
         Booking::findOrFail($id)->delete();

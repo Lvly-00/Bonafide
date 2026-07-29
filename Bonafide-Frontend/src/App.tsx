@@ -20,6 +20,7 @@ const TeacherDashboard = lazy(() => import('@/pages/teacher/TeacherDashboard'))
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
 const ChildProfilePage = lazy(() => import('@/pages/child/ChildProfilePage'))
 const AddChildWizard = lazy(() => import('@/pages/child/AddChildWizard'))
+const ChildDetailPage = lazy(() => import('@/pages/child/ChildDetailPage'))
 const AssessmentPage = lazy(() => import('@/pages/assessment/AssessmentPage'))
 const MatchingPage = lazy(() => import('@/pages/matching/MatchingPage'))
 const TeachersPage = lazy(() => import('@/pages/teachers/TeachersPage'))
@@ -96,6 +97,7 @@ export default function App() {
                 <Route path={ROUTES.CHILD_PROFILE} element={<ChildProfilePage />} />
                 <Route path={ROUTES.CHILD_PROFILE_EDIT} element={<ChildProfilePage />} />
                 <Route path={ROUTES.CHILD_PROFILE_NEW} element={<AddChildWizard />} />
+                <Route path={ROUTES.CHILD_DETAIL} element={<ChildDetailPage />} />
                 <Route path={ROUTES.ASSESSMENT} element={<AssessmentPage />} />
                 <Route path={ROUTES.ASSESSMENT_RESULT} element={<AssessmentPage />} />
                 <Route path={ROUTES.MATCHING} element={<MatchingPage />} />

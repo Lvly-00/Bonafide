@@ -325,7 +325,7 @@ export default function LandingPage() {
                 <Button
                   size="xl"
                   variant="outline"
-                  className="w-full sm:w-auto border-2 border-white/40 text-white hover:bg-white/10"
+                     className="w-full sm:w-auto bg-white text-primary hover:bg-blue-50 shadow-lg"
                   onClick={() => navigate('/parent/matching')}
                 >
                   Browse Teachers
