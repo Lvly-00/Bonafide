@@ -242,7 +242,8 @@ export default function ChildProfilePage() {
               animate={{ opacity: 1, y: 0 }}
               layout
             >
-              <Card className="group h-full transition-shadow hover:shadow-lg">
+              <Card className="group h-full overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 border-0 shadow-md shadow-gray-200/50">
+                <div className="h-1 bg-gradient-to-r from-primary via-blue-500 to-blue-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <CardContent className="flex h-full flex-col p-5">
                   <div className="flex items-start gap-4">
                     <Avatar className="h-14 w-14 shrink-0">
@@ -406,20 +407,21 @@ export default function ChildProfilePage() {
       )}
 
       {(editingChild || children.length === 0) && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="overflow-hidden border-0 shadow-xl shadow-gray-200/50">
+          <div className="h-1 bg-gradient-to-r from-primary via-blue-500 to-blue-400" />
+          <CardHeader className="flex flex-row items-center justify-between bg-gray-50/50 border-b border-gray-100">
             <CardTitle className="text-base">
               {editingChild ? 'Edit Profile' : 'New Profile'}
             </CardTitle>
             <div className="flex items-center gap-2">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-2 w-2 rounded-full transition-colors ${
-                    i + 1 <= step ? 'bg-primary' : 'bg-gray-200'
-                  }`}
-                />
-              ))}
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  i + 1 <= step ? 'w-5 bg-primary' : 'w-2 bg-gray-200'
+                }`}
+              />
+            ))}
               <span className="ml-2 text-xs text-gray-500">Step {Math.min(step, 4)}/4</span>
             </div>
           </CardHeader>
@@ -436,10 +438,13 @@ export default function ChildProfilePage() {
                   transition={{ type: 'spring' as const, stiffness: 300, damping: 30 }}
                 >
                   {step === 1 && (
-                    <div className="space-y-4">
-                      <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                        <User className="h-4 w-4" /> Basic Information
-                      </h3>
+                    <div className="space-y-5">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-light">
+                          <User className="h-4 w-4 text-primary" />
+                        </div>
+                        <h3 className="text-sm font-semibold text-gray-800">Basic Information</h3>
+                      </div>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div>
                           <label className="mb-1 block text-xs font-medium text-gray-600">Full Name</label>
@@ -495,9 +500,12 @@ export default function ChildProfilePage() {
                   {step === 2 && (
                     <div className="space-y-6">
                       <div>
-                        <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                          <AlertTriangle className="h-4 w-4" /> Learning Concerns
-                        </h3>
+                        <div className="flex items-center gap-2.5 mb-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50">
+                            <AlertTriangle className="h-4 w-4 text-amber-600" />
+                          </div>
+                          <h3 className="text-sm font-semibold text-gray-800">Learning Concerns</h3>
+                        </div>
                         <p className="mb-3 text-xs text-gray-500">Select any concerns your child may have</p>
                         <div className="flex flex-wrap gap-2">
                           {(LEARNING_CONCERNS.filter((c) => c !== 'None') as string[]).concat('None').map((concern) => (
@@ -516,10 +524,13 @@ export default function ChildProfilePage() {
                             ))}
                         </div>
                       </div>
-                      <div>
-                        <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                          <Sparkles className="h-4 w-4" /> Strengths
-                        </h3>
+                      <div className="border-t border-gray-100 pt-6">
+                        <div className="flex items-center gap-2.5 mb-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-50">
+                            <Sparkles className="h-4 w-4 text-green-600" />
+                          </div>
+                          <h3 className="text-sm font-semibold text-gray-800">Strengths</h3>
+                        </div>
                         <p className="mb-1 text-xs text-gray-500">Select your child's key strengths</p>
                         <p className="mb-3 text-[10px] text-gray-400">For better matching</p>
                         <div className="flex flex-wrap gap-2">
@@ -557,9 +568,12 @@ export default function ChildProfilePage() {
 
                   {step === 3 && (
                     <div className="space-y-4">
-                      <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                        <Sparkles className="h-4 w-4" /> Learning Style
-                      </h3>
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-light">
+                          <Sparkles className="h-4 w-4 text-primary" />
+                        </div>
+                        <h3 className="text-sm font-semibold text-gray-800">Learning Style</h3>
+                      </div>
                       <p className="text-xs text-gray-500">
                         How does your child learn best?
                       </p>
@@ -593,24 +607,27 @@ export default function ChildProfilePage() {
 
                   {step === 4 && (
                     <div className="space-y-4">
-                      <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                        <Camera className="h-4 w-4" /> Profile Picture
-                      </h3>
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-light">
+                          <Camera className="h-4 w-4 text-primary" />
+                        </div>
+                        <h3 className="text-sm font-semibold text-gray-800">Profile Picture</h3>
+                      </div>
                       <p className="text-xs text-gray-500">Upload a photo of your child</p>
                       <div className="flex flex-col items-center gap-4">
                         <div className="relative">
-                          <Avatar className="h-28 w-28">
+                          <Avatar className="h-28 w-28 ring-2 ring-gray-100 ring-offset-2">
                             {form.avatar ? (
                               <AvatarImage src={form.avatar} alt="Preview" />
                             ) : (
-                              <AvatarFallback className="text-3xl">
+                              <AvatarFallback className="text-3xl bg-gray-50">
                                 {form.name ? form.name[0].toUpperCase() : '?'}
                               </AvatarFallback>
                             )}
                           </Avatar>
                           <label
                             htmlFor="avatar-upload"
-                            className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-md hover:bg-primary-dark"
+                            className="absolute -bottom-1 -right-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 hover:bg-primary-dark transition-colors"
                           >
                             <Upload className="h-4 w-4" />
                           </label>
@@ -673,9 +690,9 @@ export default function ChildProfilePage() {
 
                           {newChildTeachers.length > 0 && (
                             <Card className="relative overflow-hidden border-2 border-primary shadow-lg">
-                              <div className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-bold text-white">
-                                Best Match — {newChildTeachers[0].compatibilityScore}%
-                              </div>
+                      <div className="absolute right-3 top-3 rounded-full bg-gradient-to-r from-primary to-blue-600 px-3 py-1 text-xs font-bold text-white shadow-md">
+                        Best Match — {newChildTeachers[0].compatibilityScore}%
+                      </div>
                               <CardContent className="p-6">
                                 <div className="flex items-start gap-4">
                                   <Avatar className="h-16 w-16">

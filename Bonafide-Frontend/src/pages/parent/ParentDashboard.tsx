@@ -108,23 +108,24 @@ export default function ParentDashboard() {
       animate="visible"
       className="space-y-5"
     >
-      <div>
+      <motion.div variants={itemVariants}>
         <h1 className="text-2xl font-bold text-gray-900">Parent Dashboard</h1>
         <p className="text-sm text-gray-500 mt-1">Track your children's learning journey</p>
-      </div>
+      </motion.div>
 
       <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         {statCards.map((stat) => {
           const Icon = stat.icon
+          const [textColor, bgColor] = stat.color.split(' ')
           return (
-            <Card key={stat.label}>
+            <Card key={stat.label} className="overflow-hidden border-0 shadow-md shadow-gray-200/50 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
               <CardContent className="flex items-center gap-4 p-5">
-                <div className={`rounded-lg p-3 ${stat.color}`}>
-                  <Icon className="h-5 w-5" />
+                <div className={`rounded-xl p-3.5 ${bgColor} shadow-sm`}>
+                  <Icon className={`h-5 w-5 ${textColor}`} />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">{stat.label}</p>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-xs font-medium text-gray-500">{stat.label}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-0.5">
                     {stat.value}
                     {stat.suffix && <span className="text-sm font-normal text-gray-500">{stat.suffix}</span>}
                   </p>
@@ -137,15 +138,16 @@ export default function ParentDashboard() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <motion.div variants={itemVariants}>
-          <Card>
+          <Card className="overflow-hidden border-0 shadow-md shadow-gray-200/50">
+            <div className="h-1 bg-gradient-to-r from-primary via-blue-500 to-blue-400" />
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Upcoming Sessions</CardTitle>
+              <CardTitle className="text-base">Upcoming Sessions</CardTitle>
               <Badge variant="secondary" size="sm">{upcomingSessions.length} sessions</Badge>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-gray-100">
                 {upcomingSessions.map((session: any) => (
-                  <div key={session.id} className="flex items-center justify-between px-5 py-3.5 text-sm">
+                  <div key={session.id} className="flex items-center justify-between px-5 py-3.5 text-sm hover:bg-gray-50/50 transition-colors">
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-gray-900 truncate">{session.childName}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
@@ -169,27 +171,28 @@ export default function ParentDashboard() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card>
+          <Card className="overflow-hidden border-0 shadow-md shadow-gray-200/50">
+            <div className="h-1 bg-gradient-to-r from-green-400 via-emerald-500 to-green-500" />
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Children Progress</CardTitle>
+              <CardTitle className="text-base">Children Progress</CardTitle>
               <GraduationCap className="h-4 w-4 text-gray-400" />
             </CardHeader>
-            <CardContent className="space-y-5">
+            <CardContent className="space-y-5 p-5">
               {childrenProgress.map((child: any) => (
                 <div key={child.id}>
                   <div className="mb-2 flex items-center justify-between text-sm">
                     <span className="font-medium text-gray-900">{child.name}</span>
                     <span className="text-xs text-gray-500">{child.grade} &middot; {child.sessionsThisMonth} sessions</span>
                   </div>
-                  <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-gray-100">
+                  <div className="relative h-3 w-full overflow-hidden rounded-full bg-gray-100">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${child.progress}%` }}
                       transition={{ duration: 1, ease: 'easeOut' }}
-                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600"
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 shadow-sm"
                     />
                   </div>
-                  <div className="mt-1 flex items-center justify-between text-xs">
+                  <div className="mt-1.5 flex items-center justify-between text-xs">
                     <span className="text-gray-500">{child.teacherName}</span>
                     <span className="font-semibold text-primary">{child.progress}%</span>
                   </div>
@@ -202,22 +205,23 @@ export default function ParentDashboard() {
 
       {bookings.filter(b => b.status === 'completed').length > 0 && (
         <motion.div variants={itemVariants}>
-          <Card>
+          <Card className="overflow-hidden border-0 shadow-md shadow-gray-200/50">
+            <div className="h-1 bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-500" />
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Completed Sessions</CardTitle>
+              <CardTitle className="text-base">Completed Sessions</CardTitle>
               <Star className="h-4 w-4 text-gray-400" />
             </CardHeader>
             <CardContent className="p-0">
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-gray-100">
                 {bookings.filter(b => b.status === 'completed').map((session) => (
-                  <div key={session.id} className="flex items-center justify-between px-5 py-3.5 text-sm">
+                  <div key={session.id} className="flex items-center justify-between px-5 py-3.5 text-sm hover:bg-gray-50/50 transition-colors">
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-gray-900 truncate">{session.childName}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{session.teacherName} &middot; {session.date}</p>
                     </div>
                     {!session.feedback?.parent ? (
-                      <Button size="sm" variant="outline" onClick={() => setFeedbackBookingId(session.id)} className="h-8 px-3 shrink-0">
-                        <Star className="h-3.5 w-3.5 mr-1" /> Rate
+                      <Button size="sm" variant="outline" onClick={() => setFeedbackBookingId(session.id)} className="h-8 px-3 shrink-0 gap-1.5">
+                        <Star className="h-3.5 w-3.5" /> Rate
                       </Button>
                     ) : (
                       <Badge variant="secondary" size="sm">Rated</Badge>
@@ -231,25 +235,26 @@ export default function ParentDashboard() {
       )}
 
       <motion.div variants={itemVariants}>
-        <Card>
+        <Card className="overflow-hidden border-0 shadow-md shadow-gray-200/50">
+          <div className="h-1 bg-gradient-to-r from-purple-400 via-pink-500 to-purple-500" />
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle className="text-base">Recent Activity</CardTitle>
             <Clock className="h-4 w-4 text-gray-400" />
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-gray-100">
               {recentActivity.map((activity: any, idx: number) => {
                 const Icon = activityIcons[activity.type] || ArrowRight
                 const colorClass = activityColors[activity.type] || 'text-gray-600 bg-gray-100'
                 return (
-                  <div key={activity.id} className="flex items-center gap-4 px-5 py-3.5">
-                    <div className={`rounded-full p-2 ${colorClass}`}>
+                  <div key={activity.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 transition-colors">
+                    <div className={`rounded-xl p-2.5 ${colorClass} shadow-sm`}>
                       <Icon className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-gray-700 truncate">{activity.message}</p>
+                      <p className="text-sm text-gray-700">{activity.message}</p>
                     </div>
-                    <span className="shrink-0 text-xs text-gray-400">{activity.time}</span>
+                    <span className="shrink-0 text-xs font-medium text-gray-400">{activity.time}</span>
                   </div>
                 )
               })}

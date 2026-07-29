@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff, LogIn } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Eye, EyeOff, LogIn, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -44,75 +45,95 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md animate-slide-up">
-        <CardHeader className="text-center pb-4">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary shadow-sm">
-            <LogIn className="h-6 w-6 text-white" />
-          </div>
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>Sign in to your LearnLink AI account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <Input
-              type="email"
-              placeholder="you@example.com"
-              label="Email"
-              error={errors.email?.message}
-              {...register('email')}
-            />
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="w-full max-w-md"
+      >
+        <Card className="overflow-hidden border-0 shadow-xl shadow-gray-200/50">
+          <div className="h-1.5 bg-gradient-to-r from-primary via-blue-500 to-blue-400" />
+          <CardHeader className="text-center pb-4 pt-7">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-blue-600 shadow-lg shadow-primary/20">
+              <LogIn className="h-6 w-6 text-white" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+            <CardDescription>Sign in to your LearnLink AI account</CardDescription>
+          </CardHeader>
+          <CardContent className="pb-7">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                label="Email"
+                error={errors.email?.message}
+                {...register('email')}
+              />
 
-            <div className="space-y-1.5">
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter your password"
+                label="Password"
+                error={errors.password?.message}
+                rightElement={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    tabIndex={-1}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                }
+                {...register('password')}
+              />
+
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-700">Password</label>
-                <Link to={ROUTES.FORGOT_PASSWORD} className="text-xs text-primary hover:underline">
+                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none w-fit group">
+                  <div className="relative flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      className="peer sr-only"
+                      {...register('rememberMe')}
+                    />
+                    <div className="h-4 w-4 rounded border border-gray-300 bg-white transition-colors peer-checked:border-primary peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-1" />
+                    <svg
+                      className="absolute hidden peer-checked:block h-3 w-3 text-white pointer-events-none"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                    >
+                      <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <span className="group-hover:text-gray-900 transition-colors">Remember me</span>
+                </label>
+                <Link to={ROUTES.FORGOT_PASSWORD} className="text-sm text-primary font-medium hover:text-primary-dark transition-colors">
                   Forgot password?
                 </Link>
               </div>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  {...register('password')}
-                  className="flex h-10 w-full rounded-lg border border-border bg-white px-3 py-2 pr-10 text-sm ring-offset-white placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  tabIndex={-1}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-xs text-danger" role="alert">{errors.password.message}</p>
-              )}
-            </div>
 
-            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer w-fit">
-              <input
-                type="checkbox"
-                className="rounded border-gray-300 text-primary focus:ring-primary"
-                {...register('rememberMe')}
-              />
-              Remember me
-            </label>
+              <Button type="submit" className="w-full h-11 text-base shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 transition-shadow" disabled={isLoading}>
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Signing in...
+                  </span>
+                ) : (
+                  'Sign in'
+                )}
+              </Button>
+            </form>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-gray-500">
-            Don't have an account?{' '}
-            <Link to={ROUTES.REGISTER} className="text-primary font-medium hover:underline">
-              Create one
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
+            <p className="mt-7 text-center text-sm text-gray-500">
+              Don't have an account?{' '}
+              <Link to={ROUTES.REGISTER} className="text-primary font-semibold hover:text-primary-dark hover:underline transition-colors">
+                Create one
+              </Link>
+            </p>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   )
 }

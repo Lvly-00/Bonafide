@@ -16,7 +16,6 @@ import {
   DollarSign,
   ArrowRight,
   Loader2,
-  Calendar,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -54,6 +53,9 @@ const slideVariants = {
   center: { x: 0, opacity: 1 },
   exit: (dir: number) => ({ x: dir > 0 ? -200 : 200, opacity: 0 }),
 }
+
+const INTEREST_OPTIONS = ['Space', 'Dinosaurs', 'Building', 'Reading', 'Art', 'Music', 'Sports', 'Science', 'Coding', 'Animals']
+const STRENGTH_OPTIONS = ['Creative Thinking', 'Problem Solving', 'Writing', 'Art', 'Leadership', 'Teamwork', 'Communication', 'Organization', 'Memory', 'Curiosity', 'Persistence', 'Math Skills']
 
 export default function AddChildWizard() {
   const navigate = useNavigate()
@@ -112,16 +114,6 @@ export default function AddChildWizard() {
     navigate(ROUTES.PARENT_DASHBOARD)
   }
 
-  const handleBookSession = (teacherId: string) => {
-    if (newChildId) {
-      navigate(ROUTES.BOOKING.replace(':teacherId', teacherId), {
-        state: { preselectedChild: { id: newChildId, name: form.name } }
-      })
-    } else {
-      navigate(ROUTES.BOOKING.replace(':teacherId', teacherId))
-    }
-  }
-
   const handleSkip = () => {
     navigate(ROUTES.PARENT_DASHBOARD)
   }
@@ -155,6 +147,31 @@ export default function AddChildWizard() {
     }
   }
 
+  const chipButton = (selected: boolean, color: 'primary' | 'amber' | 'green') => {
+    const colors = {
+      primary: 'border-primary bg-primary-light text-primary',
+      amber: 'border-amber-500 bg-amber-50 text-amber-700',
+      green: 'border-green-500 bg-green-50 text-green-700',
+    }
+    return `rounded-full border-2 px-3.5 py-1.5 text-xs font-medium transition-all duration-200 ${
+      selected
+        ? `${colors[color]} shadow-sm`
+        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:shadow-sm hover:bg-gray-50'
+    } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1`
+  }
+
+  const learningStyleCard = (selected: boolean) =>
+    `rounded-xl border-2 p-4 text-left transition-all duration-200 ${
+      selected
+        ? 'border-primary bg-primary-light shadow-md shadow-primary/10'
+        : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+    } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1`
+
+  const stepDots = (i: number) =>
+    `h-2 rounded-full transition-all duration-300 ${
+      i + 1 <= step ? 'w-5 bg-primary' : 'w-2 bg-gray-200'
+    }`
+
   const formSteps = (
     <>
       <div className="mb-6 overflow-hidden">
@@ -166,62 +183,53 @@ export default function AddChildWizard() {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ type: 'spring' as const, stiffness: 300, damping: 30 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
           >
             {step === 1 && (
-              <div className="space-y-4">
-                <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <User className="h-4 w-4" /> Basic Information
-                </h3>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600">Full Name</label>
-                    <Input
-                      placeholder="Child's full name"
-                      value={form.name}
-                      onChange={(e) => updateField('name', e.target.value)}
-                    />
+              <div className="space-y-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-light">
+                    <User className="h-4 w-4 text-primary" />
                   </div>
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-gray-600">Age</label>
-                    <Input
-                      type="number"
-                      placeholder="Age"
-                      value={form.age}
-                      onChange={(e) => updateField('age', e.target.value)}
-                    />
-                  </div>
+                  <h3 className="text-sm font-semibold text-gray-800">Basic Information</h3>
                 </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">Grade</label>
-                  <Select
-                    value={form.grade}
-                    onChange={(e) => updateField('grade', e.target.value)}
-                    options={GRADES.map((g) => ({ value: g, label: g }))}
-                    placeholder="Select grade"
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Input
+                    placeholder="Child's full name"
+                    label="Full Name"
+                    value={form.name}
+                    onChange={(e) => updateField('name', e.target.value)}
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Age"
+                    label="Age"
+                    value={form.age}
+                    onChange={(e) => updateField('age', e.target.value)}
                   />
                 </div>
+                <Select
+                  value={form.grade}
+                  onChange={(e) => updateField('grade', e.target.value)}
+                  options={GRADES.map((g) => ({ value: g, label: g }))}
+                  placeholder="Select grade"
+                  label="Grade"
+                />
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-600">
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
                     Interests <span className="text-red-400">*</span>
                   </label>
                   <div className="flex flex-wrap gap-2">
-                    {['Space', 'Dinosaurs', 'Building', 'Reading', 'Art', 'Music', 'Sports', 'Science', 'Coding', 'Animals'].map(
-                      (interest) => (
-                        <button
-                          key={interest}
-                          type="button"
-                          onClick={() => toggleArrayItem('interests', interest)}
-                          className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                            form.interests.includes(interest)
-                              ? 'border-primary bg-primary-light text-primary'
-                              : 'border-border text-gray-600 hover:border-gray-300'
-                          }`}
-                        >
-                          {interest}
-                        </button>
-                      )
-                    )}
+                    {INTEREST_OPTIONS.map((interest) => (
+                      <button
+                        key={interest}
+                        type="button"
+                        onClick={() => toggleArrayItem('interests', interest)}
+                        className={chipButton(form.interests.includes(interest), 'primary')}
+                      >
+                        {interest}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -230,57 +238,42 @@ export default function AddChildWizard() {
             {step === 2 && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <AlertTriangle className="h-4 w-4" /> Learning Concerns
-                  </h3>
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50">
+                      <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-800">Learning Concerns</h3>
+                  </div>
                   <p className="mb-3 text-xs text-gray-500">Select any concerns your child may have</p>
                   <div className="flex flex-wrap gap-2">
                     {(LEARNING_CONCERNS.filter((c) => c !== 'None') as string[]).concat('None').map((concern) => (
-                        <button
-                          key={concern}
-                          type="button"
-                          onClick={() => toggleArrayItem('learningConcerns', concern)}
-                          className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                            form.learningConcerns.includes(concern)
-                              ? 'border-amber-500 bg-amber-50 text-amber-700'
-                              : 'border-border text-gray-600 hover:border-gray-300'
-                          }`}
-                        >
-                          {concern}
-                        </button>
-                      ))}
+                      <button
+                        key={concern}
+                        type="button"
+                        onClick={() => toggleArrayItem('learningConcerns', concern)}
+                        className={chipButton(form.learningConcerns.includes(concern), 'amber')}
+                      >
+                        {concern}
+                      </button>
+                    ))}
                   </div>
                 </div>
-                <div>
-                  <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <Sparkles className="h-4 w-4" /> Strengths
-                  </h3>
+                <div className="border-t border-gray-100 pt-6">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-50">
+                      <Sparkles className="h-4 w-4 text-green-600" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-800">Strengths</h3>
+                  </div>
                   <p className="mb-1 text-xs text-gray-500">Select your child's key strengths</p>
                   <p className="mb-3 text-[10px] text-gray-400">For better matching</p>
                   <div className="flex flex-wrap gap-2">
-                    {[
-                      'Creative Thinking',
-                      'Problem Solving',
-                      'Writing',
-                      'Art',
-                      'Leadership',
-                      'Teamwork',
-                      'Communication',
-                      'Organization',
-                      'Memory',
-                      'Curiosity',
-                      'Persistence',
-                      'Math Skills',
-                    ].map((strength) => (
+                    {STRENGTH_OPTIONS.map((strength) => (
                       <button
                         key={strength}
                         type="button"
                         onClick={() => toggleArrayItem('strengths', strength)}
-                        className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                          form.strengths.includes(strength)
-                            ? 'border-green-500 bg-green-50 text-green-700'
-                            : 'border-border text-gray-600 hover:border-gray-300'
-                        }`}
+                        className={chipButton(form.strengths.includes(strength), 'green')}
                       >
                         {strength}
                       </button>
@@ -292,9 +285,12 @@ export default function AddChildWizard() {
 
             {step === 3 && (
               <div className="space-y-4">
-                <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <Sparkles className="h-4 w-4" /> Learning Style
-                </h3>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-light">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-gray-800">Learning Style</h3>
+                </div>
                 <p className="text-xs text-gray-500">How does your child learn best? You can select multiple.</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {LEARNING_STYLES.map((style) => {
@@ -309,11 +305,7 @@ export default function AddChildWizard() {
                         key={style}
                         type="button"
                         onClick={() => toggleArrayItem('learningStyle', style)}
-                        className={`rounded-xl border p-4 text-left transition-all ${
-                          form.learningStyle.includes(style)
-                            ? 'border-primary bg-primary-light ring-1 ring-primary'
-                            : 'border-border hover:border-gray-300'
-                        }`}
+                        className={learningStyleCard(form.learningStyle.includes(style))}
                       >
                         <p className="text-sm font-semibold">{style}</p>
                         <p className="mt-1 text-xs text-gray-500">{descriptions[style]}</p>
@@ -326,24 +318,27 @@ export default function AddChildWizard() {
 
             {step === 4 && (
               <div className="space-y-4">
-                <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                  <Camera className="h-4 w-4" /> Profile Picture
-                </h3>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-light">
+                    <Camera className="h-4 w-4 text-primary" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-gray-800">Profile Picture</h3>
+                </div>
                 <p className="text-xs text-gray-500">Upload a photo of your child</p>
-                <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col items-center gap-4 py-4">
                   <div className="relative">
-                    <Avatar className="h-28 w-28">
+                    <Avatar className="h-28 w-28 ring-2 ring-gray-100 ring-offset-2">
                       {form.avatar ? (
                         <AvatarImage src={form.avatar} alt="Preview" />
                       ) : (
-                        <AvatarFallback className="text-3xl">
+                        <AvatarFallback className="text-3xl bg-gray-50">
                           {form.name ? form.name[0].toUpperCase() : '?'}
                         </AvatarFallback>
                       )}
                     </Avatar>
                     <label
                       htmlFor="avatar-upload"
-                      className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-md hover:bg-primary-dark"
+                      className="absolute -bottom-1 -right-1 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-primary text-white shadow-lg shadow-primary/30 hover:bg-primary-dark transition-colors"
                     >
                       <Upload className="h-4 w-4" />
                     </label>
@@ -359,8 +354,9 @@ export default function AddChildWizard() {
                     variant="outline"
                     size="sm"
                     onClick={() => document.getElementById('avatar-upload')?.click()}
+                    className="gap-2"
                   >
-                    <Upload className="mr-2 h-4 w-4" /> Choose Photo
+                    <Upload className="h-4 w-4" /> Choose Photo
                   </Button>
                 </div>
               </div>
@@ -372,7 +368,7 @@ export default function AddChildWizard() {
                   <div className="flex flex-col items-center justify-center py-16">
                     <div className="relative mb-8">
                       <motion.div
-                        className="h-24 w-24 rounded-full border-4 border-primary/20 border-t-primary"
+                        className="h-24 w-24 rounded-full border-[3px] border-primary/20 border-t-primary"
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
                       />
@@ -385,14 +381,16 @@ export default function AddChildWizard() {
                       </motion.div>
                     </div>
                     <h3 className="text-lg font-semibold text-gray-700">AI is analyzing the best teacher match for your child...</h3>
-                    <p className="mt-4 text-xs text-gray-400">Assessing learning profile and matching with tutors</p>
+                    <p className="mt-2 text-xs text-gray-400">Assessing learning profile and matching with tutors</p>
                   </div>
                 ) : newChildTeachers.length === 0 ? (
                   <div className="py-12 text-center">
-                    <GraduationCap className="mx-auto h-12 w-12 text-gray-300" />
-                    <p className="mt-3 text-sm text-gray-500">No matching teachers found right now.</p>
-                    <p className="text-xs text-gray-400">You can browse all teachers later.</p>
-                    <div className="mt-4 flex justify-center gap-3">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-50">
+                      <GraduationCap className="h-8 w-8 text-gray-300" />
+                    </div>
+                    <p className="text-sm font-medium text-gray-700">No matching teachers found right now.</p>
+                    <p className="mt-1 text-xs text-gray-400">You can browse all teachers later.</p>
+                    <div className="mt-6 flex justify-center gap-3">
                       <Button variant="outline" onClick={handleBrowseAll}>Browse All Teachers</Button>
                       <Button onClick={handleSkip}>Continue</Button>
                     </div>
@@ -400,17 +398,17 @@ export default function AddChildWizard() {
                 ) : (
                   <div className="space-y-6">
                     <div className="text-center">
-                      <h3 className="text-lg font-semibold text-gray-900">AI Match Results</h3>
+                      <h3 className="text-lg font-bold text-gray-900">AI Match Results</h3>
                       <p className="text-sm text-gray-500">Based on your child's learning profile</p>
                     </div>
 
-                    <Card className="relative overflow-hidden border-2 border-primary shadow-lg">
-                      <div className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-bold text-white">
+                    <Card className="relative overflow-hidden border-2 border-primary shadow-lg shadow-primary/10">
+                      <div className="absolute right-3 top-3 rounded-full bg-gradient-to-r from-primary to-blue-600 px-3 py-1 text-xs font-bold text-white shadow-md">
                         Best Match — {newChildTeachers[0].compatibilityScore}%
                       </div>
                       <CardContent className="p-6">
                         <div className="flex items-start gap-4">
-                          <Avatar className="h-16 w-16">
+                          <Avatar className="h-16 w-16 ring-2 ring-primary/20 ring-offset-2">
                             {newChildTeachers[0].avatar ? <AvatarImage src={newChildTeachers[0].avatar} /> : null}
                             <AvatarFallback className="text-lg">{newChildTeachers[0].name[0]}</AvatarFallback>
                           </Avatar>
@@ -424,20 +422,23 @@ export default function AddChildWizard() {
                               ))}
                             </div>
                             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500">
-                              <span className="flex items-center gap-1"><Star className="h-4 w-4 text-amber-400" />{newChildTeachers[0].rating}</span>
+                              <span className="flex items-center gap-1"><Star className="h-4 w-4 text-amber-400 fill-amber-400" />{newChildTeachers[0].rating}</span>
                               <span className="flex items-center gap-1"><Briefcase className="h-4 w-4" />{newChildTeachers[0].experience}yr exp</span>
                               <span className="flex items-center gap-1"><DollarSign className="h-4 w-4" />${newChildTeachers[0].hourlyRate}/hr</span>
                             </div>
                             {newChildTeachers[0].matchReasons.length > 0 && (
                               <div className="mt-3 space-y-1">
                                 {newChildTeachers[0].matchReasons.map((r, i) => (
-                                  <p key={i} className="text-xs text-green-600">✓ {r}</p>
+                                  <p key={i} className="text-xs text-green-600 flex items-center gap-1">
+                                    <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 12 12" fill="none"><path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                    {r}
+                                  </p>
                                 ))}
                               </div>
                             )}
                             <div className="mt-4 flex gap-3">
-                              <Button size="sm" onClick={() => handleBookSession(newChildTeachers[0].teacherId)}>
-                                <Calendar className="mr-1 h-4 w-4" /> Book Session
+                              <Button size="sm" onClick={() => handleSelectTeacher(newChildTeachers[0].teacherId)}>
+                                <Check className="mr-1 h-4 w-4" /> Select This Teacher
                               </Button>
                               <Button variant="outline" size="sm" onClick={handleBrowseAll}>
                                 Browse All
@@ -453,7 +454,7 @@ export default function AddChildWizard() {
                         <h4 className="mb-3 text-sm font-semibold text-gray-700">Other Recommended Teachers</h4>
                         <div className="grid gap-3 sm:grid-cols-2">
                           {newChildTeachers.slice(1).map((teacher) => (
-                            <Card key={teacher.teacherId} className="relative overflow-hidden">
+                            <Card key={teacher.teacherId} className="relative overflow-hidden transition-shadow hover:shadow-md">
                               <div className="absolute right-2 top-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
                                 {teacher.compatibilityScore}% match
                               </div>
@@ -473,7 +474,7 @@ export default function AddChildWizard() {
                                       ))}
                                     </div>
                                     <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
-                                      <span className="flex items-center gap-1"><Star className="h-3 w-3 text-amber-400" />{teacher.rating}</span>
+                                      <span className="flex items-center gap-1"><Star className="h-3 w-3 text-amber-400 fill-amber-400" />{teacher.rating}</span>
                                       <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" />{teacher.experience}yr</span>
                                       <span className="flex items-center gap-1"><DollarSign className="h-3 w-3" />${teacher.hourlyRate}/hr</span>
                                     </div>
@@ -481,10 +482,11 @@ export default function AddChildWizard() {
                                 </div>
                                 <Button
                                   size="sm"
+                                  variant="outline"
                                   className="mt-3 w-full"
-                                  onClick={() => handleBookSession(teacher.teacherId)}
+                                  onClick={() => handleSelectTeacher(teacher.teacherId)}
                                 >
-                                  <Calendar className="mr-1 h-3.5 w-3.5" /> Book Session
+                                  Select
                                 </Button>
                               </CardContent>
                             </Card>
@@ -494,8 +496,8 @@ export default function AddChildWizard() {
                     )}
 
                     <div className="flex justify-center gap-3 pt-2">
-                      <Button variant="outline" onClick={handleBrowseAll}>
-                        <ArrowRight className="mr-1.5 h-4 w-4" /> Browse All Teachers
+                      <Button variant="outline" onClick={handleBrowseAll} className="gap-2">
+                        <ArrowRight className="h-4 w-4" /> Browse All Teachers
                       </Button>
                       <button
                         type="button"
@@ -514,25 +516,25 @@ export default function AddChildWizard() {
       </div>
 
       {step < 5 && (
-        <div className="flex items-center justify-between border-t pt-5">
+        <div className="flex items-center justify-between border-t border-gray-100 pt-5">
           <div>
             {step > 1 && (
-              <Button variant="outline" size="sm" onClick={goPrev}>
-                <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+              <Button variant="outline" size="sm" onClick={goPrev} className="gap-1.5">
+                <ChevronLeft className="h-4 w-4" /> Previous
               </Button>
             )}
           </div>
           <div className="flex gap-2">
             {step < 4 ? (
-              <Button size="sm" onClick={goNext} disabled={!isStepValid()}>
-                Next <ChevronRight className="ml-1 h-4 w-4" />
+              <Button size="sm" onClick={goNext} disabled={!isStepValid()} className="gap-1.5 shadow-lg shadow-primary/20">
+                Next <ChevronRight className="h-4 w-4" />
               </Button>
             ) : (
-              <Button size="sm" onClick={handleSubmit} disabled={submitting}>
+              <Button size="sm" onClick={handleSubmit} disabled={submitting} className="gap-1.5 shadow-lg shadow-primary/20">
                 {submitting ? (
-                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <Check className="mr-1 h-4 w-4" />
+                  <Check className="h-4 w-4" />
                 )}
                 Complete Profile
               </Button>
@@ -545,33 +547,30 @@ export default function AddChildWizard() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
       className="mx-auto max-w-3xl space-y-6"
     >
-      <div>
-        <h1 className="text-2xl font-bold">Add Your Child</h1>
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-gray-900">Add Your Child</h1>
         <p className="text-sm text-gray-500">Create a learning profile and get matched with the perfect tutor</p>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">
+      <Card className="overflow-hidden border-0 shadow-xl shadow-gray-200/50">
+        <div className="h-1 bg-gradient-to-r from-primary via-blue-500 to-blue-400" />
+        <CardHeader className="flex flex-row items-center justify-between border-b border-gray-100 bg-gray-50/50">
+          <CardTitle className="text-base font-semibold">
             {step === 1 ? 'Basic Info' : step === 2 ? 'Concerns & Strengths' : step === 3 ? 'Learning Style' : step === 4 ? 'Photo' : 'AI Matching'}
           </CardTitle>
           <div className="flex items-center gap-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className={`h-2 w-2 rounded-full transition-colors ${
-                  i + 1 <= step ? 'bg-primary' : 'bg-gray-200'
-                }`}
-              />
+              <div key={i} className={stepDots(i)} />
             ))}
-            <span className="ml-2 text-xs text-gray-500">Step {Math.min(step, 4)}/4</span>
+            <span className="ml-1 text-xs text-gray-400 font-medium">Step {Math.min(step, 4)}/4</span>
           </div>
         </CardHeader>
-        <CardContent>{formSteps}</CardContent>
+        <CardContent className="p-6">{formSteps}</CardContent>
       </Card>
     </motion.div>
   )
